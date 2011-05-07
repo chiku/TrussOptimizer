@@ -1,1 +1,5 @@
-4 0 0 0 0 n n .866 1.5 0 0 n n .866 .5 0 0 n n 1.732 0 0 0 n n y y n y y y
+4 0 0 n n y 0 y 0
+.866 1.5 y 0  y 100 n n 
+.866 .5 y 0  y 50 n n 
+1.732 0 n n y 0 y 0
+y y n y y y

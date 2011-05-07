@@ -1,151 +1,81 @@
 #include <iostream>
 #include <strstream>
 
-/* IMPLEMENTING MATRIX CLASS */
+/* IMPLEMENTING MATRIX */
 
-class Matrix
+struct Matrix
 {
-	private:
-   	double mat[20][20];
-      int row, col;
-
-      Matrix part(int, int);
-
-   public:
-     	Matrix();
-      Matrix(int, int);
-      Matrix(int, int, char[]);
-
-      void changeOrder(int, int);
-      double element(int, int);
-      double determinant();
-
-      friend Matrix operator +(Matrix, Matrix);
-      friend Matrix operator -(Matrix, Matrix);
-      friend Matrix operator *(Matrix, Matrix);
-
-      friend Matrix operator +(Matrix);
-      friend Matrix operator -(Matrix);
-
-      Matrix scalarMult(double);
-      friend Matrix operator ~(Matrix);
-
-      friend ostream& operator <<(ostream& , Matrix&);
-      friend istream& operator >>(istream& , Matrix&);
+  	double mat[10][10];
+   int row, col;
 };
 
-// no-arguement constructor
-Matrix::Matrix()
-{
-	row=col=1;
-	mat[0][0]=0;
-}
-
-// two-arguement constructor
-Matrix::Matrix(int r, int c)
-{
-   if (r<=0 || c<=0)
-   {
-   	cerr <<"Order of matrix cannot be non-positive.\n";
-      return;
-   }
-   row=r;
-   col=c;
-   for (int i=0; i<r; i++)
-   	for (int j=0; j<c; j++)
-      	mat[i][j]=0;
-}
-
-// three-arguement constructor
-Matrix::Matrix(int r, int c, char str[])
-{
-   if (r<=0 || c<=0)
-   {
-   	cerr <<"Order of matrix cannot be non-positive.\n";
-      return;
-   }
-   row=r;
-   col=c;
-
-   istrstream s(str);
-   for (int i=0; i<r; i++)
-   	for (int j=0; j<c; j++)
-      	s >>mat[i][j];
-}
-
-
-// returns element
-double Matrix::element(int r, int c)
-{
-	return mat[r][c];
-}
 
 // changes order of matrix
-void Matrix::changeOrder(int r, int c)
+void changeOrder(Matrix& A, int r, int c)
 {
-	row=r;
-   col=c;
+	A.row=r;
+   A.col=c;
 }
 
 // determines corresponding determinant
-double Matrix::determinant()
+double determinant(Matrix A)
 {
 	Matrix aux;
 	double d=0;
 
    int n;
-   if (row!=col)
+   if (A.row!=A.col)
    {
    	cerr <<"\nOnly square matrices can have corresponding determinants.";
       return d;
    }
-   n=row;
+   n=A.row;
 
    if (n==1)
-		return mat[0][0];
+		return A.mat[0][0];
 
 	if (n==2)
-		return (mat[0][0]*mat[1][1] - mat[1][0]*mat[0][1]);
+		return (A.mat[0][0]*A.mat[1][1] - A.mat[1][0]*A.mat[0][1]);
 
-   aux.changeOrder(n-1, n-1);
+   changeOrder(aux, n-1, n-1);
 	for (int a=0; a<n; a++)
 	{
 		int i, j;
 		for (i=0; i<n; i++)
 			for (j=0; j<a; j++)
-				aux.mat[i][j] = mat[i+1][j];
+				aux.mat[i][j] = A.mat[i+1][j];
 
 		for (i=0; i<n; i++)
 			for (j=a; j<n; j++)
-				aux.mat[i][j] = mat[i+1][j+1];
+				aux.mat[i][j] = A.mat[i+1][j+1];
 
 		if (a%2)
-			d -= mat[0][a]*aux.determinant();
+			d -= A.mat[0][a]*determinant(aux);
 		else
-			d += mat[0][a]*aux.determinant();
+			d += A.mat[0][a]*determinant(aux);
 	}
 	return d;
 }
 
 // used in finding the inverse of matrix
-Matrix Matrix::part(int m, int n)
+Matrix part(Matrix A, int m, int n)
 {
    Matrix B;
-   B.changeOrder(row-1, col-1);
+   changeOrder(B, A.row-1, A.col-1);
 	int i,j;
 	for (i=0; i<m; i++)
 		for (j=0; j<n; j++)
-			B.mat[i][j] = element(i, j);
+			B.mat[i][j] = A.mat[i][j];
 	for (i=0; i<m; i++)
-		for (j=n; j<col; j++)
-			B.mat[i][j] = element(i, j+1);
+		for (j=n; j<A.col; j++)
+			B.mat[i][j] = A.mat[i][j+1];
 
-	for (i=m; i<row; i++)
+	for (i=m; i<A.row; i++)
 		for (j=0; j<n; j++)
-			B.mat[i][j] = element(i+1, j);
-	for (i=m; i<row; i++)
-		for (j=n; j<col; j++)
-			B.mat[i][j] = element(i+1, j+1);
+			B.mat[i][j] = A.mat[i+1][j];
+	for (i=m; i<A.row; i++)
+		for (j=n; j<A.col; j++)
+			B.mat[i][j] = A.mat[i+1][j+1];
    return B;
 }
 
@@ -159,10 +89,10 @@ Matrix operator +(Matrix a, Matrix b)
    	cerr <<"Matries incompatible for addition.\n";
       return c;
    }
-   c.changeOrder(a.row, a.col);
+   changeOrder(c, a.row, a.col);
    for (int i=0; i<a.row; i++)
    	for (int j=0; j<a.col; j++)
-      	c.mat[i][j]=a.element(i, j)+b.element(i, j);
+      	c.mat[i][j]=a.mat[i][j]+b.mat[i][j];
    return c;
 }
 
@@ -175,10 +105,10 @@ Matrix operator -(Matrix A, Matrix B)
    	cerr <<"Matries incompatible for subtraction.\n";
       return C;
    }
-   C.changeOrder(A.row, A.col);
+   changeOrder(C, A.row, A.col);
    for (int i=0; i<A.row; i++)
    	for (int j=0; j<A.col; j++)
-      	C.mat[i][j]=A.element(i, j)-B.element(i, j);
+      	C.mat[i][j]=A.mat[i][j]-B.mat[i][j];
    return C;
 }
 
@@ -191,12 +121,12 @@ Matrix operator *(Matrix A, Matrix B)
    	cerr <<"Matries incompatible for multiplication.\n";
       return C;
    }
-   C.changeOrder(A.row, B.col);
+   changeOrder(C, A.row, B.col);
    int i, j, k;
    for (i=0; i<A.row; i++)
 	  	for (j=0; j<B.col; j++)
         	for (k=0; k<A.col; k++)
-         	C.mat[i][j] += A.element(i, k) * B.element(k, j);
+         	C.mat[i][j] += A.mat[i][k] * B.mat[k][j];
 
    return C;
 }
@@ -211,7 +141,7 @@ Matrix operator +(Matrix A)
 Matrix operator -(Matrix A)
 {
    Matrix B;
-   B.changeOrder(A.row, A.col);
+   changeOrder(B, A.row, A.col);
 	for (int i=0; i<A.row; i++)
    	for (int j=0; j<A.col; j++)
       	B.mat[i][j] = -A.mat[i][j];
@@ -219,13 +149,13 @@ Matrix operator -(Matrix A)
 }
 
 // scalar multiplicaiton
-Matrix Matrix::scalarMult(double x)
+Matrix scalarMult(Matrix A, double x)
 {
    Matrix B;
-   B.changeOrder(row, col);
-	for (int i=0; i<row; i++)
-   	for (int j=0; j<col; j++)
-      	B.mat[i][j] = x*mat[i][j];
+   changeOrder(B, A.row, A.col);
+	for (int i=0; i<A.row; i++)
+   	for (int j=0; j<A.col; j++)
+      	B.mat[i][j] = x*A.mat[i][j];
 	return B;
 }
 
@@ -234,7 +164,7 @@ Matrix Matrix::scalarMult(double x)
 // finds the inverse of the matrix
 Matrix operator ~(Matrix A)
 {
-	double detA=A.determinant();
+	double detA=determinant(A);
 	Matrix temp;
 	int i, j;
 	if (detA == 0 || A.row!=A.col)
@@ -242,16 +172,17 @@ Matrix operator ~(Matrix A)
 		cout <<"The matrix has no inverse!\n";
 		return temp;
 	}
-   temp.changeOrder(A.row, A.col);
+   changeOrder(temp, A.row, A.col);
    int n=A.row;
 
 	for (i=0; i<n; i++)
 		for (j=0; j<n; j++)
 		{
 			double t;
-         Matrix aux(n, n);
-			aux=A.part(i, j);
-			t=aux.determinant();
+         Matrix aux;
+         changeOrder(aux, n, n);
+			aux=part(A, i, j);
+			t=determinant(aux);
 			temp.mat[j][i] = t/detA;
 			if ((i+j)%2)
 				temp.mat[j][i] = -temp.mat[j][i];
@@ -284,9 +215,14 @@ ostream& operator <<(ostream& s, Matrix& A)
 void main()
 {
    int a;
-   char S[]="2 3";
-   Matrix C(2, 1, S);
-   Matrix D(1, 2, S);
+   Matrix C, D;
+   changeOrder(C, 1, 4);
+   changeOrder(D, 4, 1);
+   C.mat[0][0]=1; C.mat[0][1]=2;
+   C.mat[0][2]=2; C.mat[0][3]=3;
+
+	D.mat[0][0]=3; D.mat[1][0]=2;
+   D.mat[2][0]=4; D.mat[3][0]=3;
 
    Matrix E=C*D;
    cout <<endl <<E;
@@ -295,4 +231,4 @@ void main()
 
    cin >>a;
 }
-*/
+  */
