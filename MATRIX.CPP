@@ -1,6 +1,7 @@
 #include <iostream>
-#include <strstream>
 #include <process.h>
+
+using namespace std;
 
 /* IMPLEMENTING MATRIX */
 
@@ -117,12 +118,18 @@ Matrix operator *(Matrix A, Matrix B)
 {
 	Matrix C;
    changeOrder(C, A.row, B.col);
+   int i, j, k;
+
    if (A.col!=B.row)
    {
    	cerr <<"Matries incompatible for multiplication.\n";
       return C;
    }
-   int i, j, k;
+   
+   for (i=0; i<C.row; i++)
+   	for (j=0; j<C.col; j++)
+   		C.mat[i][j] = 0;
+   
    for (i=0; i<A.row; i++)
 	  	for (j=0; j<B.col; j++)
         	for (k=0; k<A.col; k++)

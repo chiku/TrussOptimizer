@@ -1,10 +1,11 @@
 // Fem analysis of a 2D truss
 
 #include <iostream>
-#include <strstream>
 #include <conio.h>
-#include <math.h>
+#include <cmath>
 #include "matrix.cpp"
+
+using namespace std;
 
 const int MAX = 10;
 
@@ -73,7 +74,7 @@ Truss::Truss()
    changeOrder(displacement, 2*total_nodes, 1);
 
    for (i=0; i<2*total_nodes; i++)
-   	for (j=9; j<2*total_nodes; j++)
+   	for (j=0; j<2*total_nodes; j++)
       	kglobal.mat[i][j] = 0;
 
    for (i=0; i<total_nodes; i++)
@@ -112,8 +113,11 @@ Truss::Truss()
       	cout <<"Is node " <<i <<" connected to node " <<j <<" (y/n)?";
          cin >>connectivity[i][j];
          connectivity[j][i] = connectivity[i][j];
-         cout <<"Enter the area of the node: ";
-         cin >>area[a++];
+         if (connectivity[i][j] == 'y')
+		 {
+				cout <<"Enter the area of the node: ";
+	         cin >>area[a++];
+		}
       }
    cout <<"Enter the value of E: ";
    cin >>E;
@@ -339,7 +343,7 @@ void Truss::printMatrices()
 
 }
 
-void main()
+int main()
 {
    cout.precision(3);
 	Truss T;
