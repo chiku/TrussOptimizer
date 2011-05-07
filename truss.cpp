@@ -136,7 +136,6 @@ void Truss::getData()
 
 Truss::~Truss()
 {
-	delete[] klocal;
 	delete[] N;
 	delete[] klocal;
 	delete[] connectivity;
@@ -377,7 +376,6 @@ int main()
 	T.condense();
 	T.solve();
 	T.printMatrices();
-	getch();	
 }
 */
 

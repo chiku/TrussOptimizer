@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <cstdlib>
 #include "truss.cpp"
 
 #ifndef __DE_H__
@@ -12,7 +13,7 @@ using namespace std;
 
 inline int randomBetween(int a, int b) // [a, b)
 {
-	return ( rand() * (b-a) /(RAND_MAX) + a);
+	return ( a + rand() % (b+1-a) );
 }
 
 inline double randomBetween(double a, double b) // [a, b)
@@ -195,7 +196,7 @@ void DE::evolution()
 	temp.getData();
 	long int GENERATION = 0;
 	avg_fitness = 1e50; best_fitness = 1e49;
-	while (avg_fitness - best_fitness >= 0.000001 && GENERATION < 5000)
+	while (avg_fitness - best_fitness >= 0.000001 && GENERATION < 50000)
 	{
 		findFitness();
 		GENERATION++;
@@ -246,8 +247,7 @@ int main()
 {
 	cout.precision(5);
 	for (int i=0; i<10000; i++)
-		cout <<randomBetween(1.0, 10.0) <<endl;	
-	getch();
+		cout <<randomBetween(1, 10) <<endl;	
 }
 */
 

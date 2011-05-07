@@ -254,6 +254,6 @@ int main()
 	C = A*B;
 	cout <<endl <<C;
 	cout <<endl <<B.row <<B.col;
-	getch();
 }
 */
+

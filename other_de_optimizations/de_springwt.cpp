@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <conio.h>
 #include <cmath>
 
 #ifndef __DE_H__
@@ -12,7 +11,7 @@ using namespace std;
 
 inline int randomBetween(int a, int b) // [a, b)
 {
-	return ( rand() * (b-a) /(RAND_MAX) + a);
+	return ( a + rand() % (b+1-a) );
 }
 
 inline double randomBetween(double a, double b) // [a, b)
@@ -116,6 +115,7 @@ void DE::findFitness()
 	best_fitness = fitness[0]; 
 	best_fitness_loc = 0;
 	avg_fitness = fitness[0]; 
+
 	for (i=1; i<POPULATION; i++)
 	{
 		if (fitness[i] < fitness[best_fitness_loc])
@@ -214,6 +214,5 @@ int main()
 	DE de;
 	de.evolution();
 	de.printResult();
-	getch();
 }
 
