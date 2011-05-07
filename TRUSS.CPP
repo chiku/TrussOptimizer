@@ -1,6 +1,7 @@
 // Fem analysis of a 2D truss
 
 #include <iostream>
+#include <fstream>
 #include <conio.h>
 #include <cmath>
 #include "matrix.cpp"
@@ -8,6 +9,9 @@
 using namespace std;
 
 const int MAX = 10;
+const double PENALTY = 10000;
+double MIN_AREA = 1, MAX_AREA = 100, MAX_STRESS = 200;
+
 
 struct Node
 {
@@ -30,110 +34,112 @@ class Truss
 {
 	private:
 		int total_nodes, total_members;
-      Node *N;
-      Matrix force, displacement;
-      double *area;
-      Matrix kglobal, kglobalcond, *klocal;
+		Node *N;
+		Matrix force, displacement;
+		Matrix kglobal, kglobalcond, *klocal;
 		Matrix k11, k12, k21, k22;
-      Matrix Fknown, Funknown, uknown, uunknown;
-      Matrix *locforce;
-      double E;
+		Matrix Fknown, Funknown, uknown, uunknown;
+		double E;
 
 		char (*connectivity)[MAX];
-      char *knowledgeF, *knowledgeu;
+		char *knowledgeF, *knowledgeu;
 
    public:
-		Truss();	// constructor accepts all input data
-      ~Truss();
+		double *area;
+		Matrix *locforce;
+		
+		void getData();	// accepts all input data
+		~Truss();
 		void findKLocal();
-      void findKGlobal();
-      void condense();
-      void solve();
-
-      void printMatrices();
+		void findKGlobal();
+		void condense();
+		void solve();
+		
+		int members() { return total_members; };
+		int nodes() { return total_nodes; };
+		void modifyArea(double new_area[]);
+		void printMatrices();
 };
 
-// constructor accepts the input data
-Truss::Truss()
+// accepts the input data
+void Truss::getData()
 {
-   int i, j;
-   N = new Node[MAX];
-   klocal = new Matrix[MAX];
-   connectivity = new char[MAX][MAX];
-   knowledgeF = new char[MAX];
-   knowledgeu = new char[MAX];
-   locforce = new Matrix[MAX];
-   area = new double[MAX];
+	int i, j;
+	N = new Node[MAX];
+	klocal = new Matrix[MAX];
+	connectivity = new char[MAX][MAX];
+	knowledgeF = new char[MAX];
+	knowledgeu = new char[MAX];
+	locforce = new Matrix[MAX];
+	area = new double[MAX];
 
-   total_members = 0; // the actual value is found in findKLocal()
-	cout <<"Enter the number of nodes: ";
-   cin >>total_nodes;
+	ifstream F("truss.dat");
 
-   changeOrder(kglobal, 2*total_nodes, 2*total_nodes);
-   changeOrder(force, 2*total_nodes, 1);
-   changeOrder(displacement, 2*total_nodes, 1);
+	total_members = 0; // the actual value is found in findKLocal()
+	// the number of nodes
+	F >>total_nodes;
 
-   for (i=0; i<2*total_nodes; i++)
-   	for (j=0; j<2*total_nodes; j++)
-      	kglobal.mat[i][j] = 0;
+	changeOrder(kglobal, 2*total_nodes, 2*total_nodes);
+	changeOrder(force, 2*total_nodes, 1);
+	changeOrder(displacement, 2*total_nodes, 1);
 
-   for (i=0; i<total_nodes; i++)
-   {
-   	cout <<"\n\tNODE " <<i <<endl;
-      N[i].getData();
-      connectivity[i][i] = 'n';  // avoids node being connected to itself
+	for (i=0; i<2*total_nodes; i++)
+		for (j=9; j<2*total_nodes; j++)
+			kglobal.mat[i][j] = 0;
 
-      // input forces
-      cout <<"Is the force in x-direction known(y/n)?";
-      cin >>knowledgeF[i*2];
-      if (knowledgeF[i*2]=='y')
-      	cin >>force.mat[2*i][0];
+	for (i=0; i<total_nodes; i++)
+	{
+		N[i].getData();
+		connectivity[i][i] = 'n';  // avoids node being connected to itself
 
-      cout <<"Is the force in y-direction known(y/n)?";
-      cin >>knowledgeF[i*2+1];
-      if (knowledgeF[i*2+1]=='y')
-      	cin >>force.mat[2*i+1][0];
+		// input forces
+		// Is the force in x-direction known(y/n)?
+		F >>knowledgeF[i*2];
+		if (knowledgeF[i*2]=='y')
+			F >>force.mat[2*i][0];
 
-      // input displacement
-      cout <<"Is the displacement in x-direction known(y/n)?";
-      cin >>knowledgeu[i*2];
-      if (knowledgeu[i*2]=='y')
-      	cin >>displacement.mat[2*i][0];
+		// Is the force in y-direction known(y/n)?
+		F >>knowledgeF[i*2+1];
+		if (knowledgeF[i*2+1]=='y')
+			F >>force.mat[2*i+1][0];
 
-      cout <<"Is the displacement in y-direction known(y/n)?";
-      cin >>knowledgeu[i*2+1];
-      if (knowledgeu[i*2+1]=='y')
-      	cin >>displacement.mat[2*i+1][0];
-   }
+		// input displacement
+		// Is the displacement in x-direction known(y/n)?
+		F >>knowledgeu[i*2];
+		if (knowledgeu[i*2]=='y')
+			F >>displacement.mat[2*i][0];
+
+		// Is the displacement in y-direction known(y/n)?
+		F >>knowledgeu[i*2+1];
+		if (knowledgeu[i*2+1]=='y')
+			F >>displacement.mat[2*i+1][0];
+	}
 
 	int a=0;
-   for (i=0; i<total_nodes; i++)
-   	for (j=i+1; j<total_nodes; j++)
-      {
-      	cout <<"Is node " <<i <<" connected to node " <<j <<" (y/n)?";
-         cin >>connectivity[i][j];
-         connectivity[j][i] = connectivity[i][j];
-         if (connectivity[i][j] == 'y')
-		 {
-				cout <<"Enter the area of the node: ";
-	         cin >>area[a++];
+	for (i=0; i<total_nodes; i++)
+		for (j=i+1; j<total_nodes; j++)
+		{
+			// Is node i connected to node j (y/n)?;
+			F >>connectivity[i][j];
+			connectivity[j][i] = connectivity[i][j];
+			// The area of the node (dummy value)
+			F >>area[a++];
 		}
-      }
-   cout <<"Enter the value of E: ";
-   cin >>E;
+	// The value of E
+	F >>E;
 }
 
 
 Truss::~Truss()
 {
 	delete[] klocal;
-   delete[] N;
-   delete[] klocal;
-   delete[]connectivity;
-   delete[]knowledgeF;
-   delete[]knowledgeu;
-   delete[] locforce;
-   delete[] area;
+	delete[] N;
+	delete[] klocal;
+	delete[] connectivity;
+	delete[] knowledgeF;
+	delete[] knowledgeu;
+	delete[] locforce;
+	delete[] area;
 }
 
 
@@ -141,62 +147,62 @@ Truss::~Truss()
 void Truss::findKLocal()
 {
 	total_members=0;
-   int i, j;
-   double Cx, Cy, len;
+	int i, j;
+	double Cx, Cy, len;
 
-   for(i=0; i<total_nodes; i++)
-   	for(j=i+1; j<total_nodes; j++)
-      {
-      	if(connectivity[i][j] == 'y' || connectivity[i][j] == 'Y')
+	for(i=0; i<total_nodes; i++)
+		for(j=i+1; j<total_nodes; j++)
+		{
+			if(connectivity[i][j] == 'y' || connectivity[i][j] == 'Y')
 			{
 				len = sqrt( pow((N[i].x-N[j].x),2.0) + pow((N[i].y-N[j].y),2.0) );
-            Cx = (N[j].x-N[i].x) / len;
+				Cx = (N[j].x-N[i].x) / len;
 				Cy = (N[j].y-N[i].y) / len;
 
-            changeOrder(klocal[total_members], 4, 4);
+				changeOrder(klocal[total_members], 4, 4);
 				klocal[total_members].mat[0][0]=klocal[total_members].mat[2][2]=Cx*Cx/len;
 				klocal[total_members].mat[1][1]=klocal[total_members].mat[3][3]=Cy*Cy/len;
-            klocal[total_members].mat[0][2]=klocal[total_members].mat[2][0]=-Cx*Cx/len;
+				klocal[total_members].mat[0][2]=klocal[total_members].mat[2][0]=-Cx*Cx/len;
 				klocal[total_members].mat[3][1]=klocal[total_members].mat[1][3]=-Cy*Cy/len;
-            klocal[total_members].mat[0][1]=klocal[total_members].mat[1][0]=
-            				klocal[total_members].mat[3][2]=klocal[total_members].mat[2][3]=Cx*Cy/len;
+				klocal[total_members].mat[0][1]=klocal[total_members].mat[1][0]=
+								klocal[total_members].mat[3][2]=klocal[total_members].mat[2][3]=Cx*Cy/len;
 				klocal[total_members].mat[3][0]=klocal[total_members].mat[0][3]=
-            				klocal[total_members].mat[1][2]=klocal[total_members].mat[2][1]=-Cx*Cy/len;
-            klocal[total_members] = scalarMult(klocal[total_members], E*area[total_members]);
-            total_members++;
-         }
-      }
+								klocal[total_members].mat[1][2]=klocal[total_members].mat[2][1]=-Cx*Cy/len;
+				klocal[total_members] = scalarMult(klocal[total_members], E*area[total_members]);
+				total_members++;
+			}
+		}
 }
 
 // finds the uncondensed k global matrix
 void Truss::findKGlobal()
 {
 	int i, j, mem_no=0;
-   for (i=0; i<total_nodes-1; i++)
-   	for (j=i; j<total_nodes; j++)
-      	if (connectivity[i][j] == 'Y' || connectivity[i][j] == 'y' && i!=j)
-         {
-				kglobal.mat[i*2][i*2]     += klocal[mem_no].mat[0][0];
-				kglobal.mat[i*2][i*2+1]   += klocal[mem_no].mat[0][1];
-				kglobal.mat[i*2][j*2]     += klocal[mem_no].mat[0][2];
-				kglobal.mat[i*2][j*2+1]   += klocal[mem_no].mat[0][3];
+	for (i=0; i<total_nodes-1; i++)
+		for (j=i; j<total_nodes; j++)
+	 	if (connectivity[i][j] == 'Y' || connectivity[i][j] == 'y' && i!=j)
+		 {
+				kglobal.mat[i*2][i*2]	+= klocal[mem_no].mat[0][0];
+				kglobal.mat[i*2][i*2+1]	+= klocal[mem_no].mat[0][1];
+				kglobal.mat[i*2][j*2]	+= klocal[mem_no].mat[0][2];
+				kglobal.mat[i*2][j*2+1]	+= klocal[mem_no].mat[0][3];
 
-				kglobal.mat[i*2+1][i*2]   += klocal[mem_no].mat[1][0];
+				kglobal.mat[i*2+1][i*2]	+= klocal[mem_no].mat[1][0];
 				kglobal.mat[i*2+1][i*2+1] += klocal[mem_no].mat[1][1];
-				kglobal.mat[i*2+1][j*2]   += klocal[mem_no].mat[1][2];
+				kglobal.mat[i*2+1][j*2]	+= klocal[mem_no].mat[1][2];
 				kglobal.mat[i*2+1][j*2+1] += klocal[mem_no].mat[1][3];
 
-				kglobal.mat[j*2][i*2]     += klocal[mem_no].mat[2][0];
-				kglobal.mat[j*2][i*2+1]   += klocal[mem_no].mat[2][1];
-				kglobal.mat[j*2][j*2]     += klocal[mem_no].mat[2][2];
-				kglobal.mat[j*2][j*2+1]   += klocal[mem_no].mat[2][3];
+				kglobal.mat[j*2][i*2]	+= klocal[mem_no].mat[2][0];
+				kglobal.mat[j*2][i*2+1]	+= klocal[mem_no].mat[2][1];
+				kglobal.mat[j*2][j*2]	+= klocal[mem_no].mat[2][2];
+				kglobal.mat[j*2][j*2+1]	+= klocal[mem_no].mat[2][3];
 
-				kglobal.mat[j*2+1][i*2]   += klocal[mem_no].mat[3][0];
+				kglobal.mat[j*2+1][i*2]	+= klocal[mem_no].mat[3][0];
 				kglobal.mat[j*2+1][i*2+1] += klocal[mem_no].mat[3][1];
-				kglobal.mat[j*2+1][j*2]   += klocal[mem_no].mat[3][2];
+				kglobal.mat[j*2+1][j*2]	+= klocal[mem_no].mat[3][2];
 				kglobal.mat[j*2+1][j*2+1] += klocal[mem_no].mat[3][3];
-            mem_no++;
-         }
+		  mem_no++;
+		 }
 }
 
 /* static condensation scheme to find k11, k12, k21 and k22
@@ -204,154 +210,318 @@ void Truss::findKGlobal()
 void Truss::condense()
 {
 	int i, j;
-   int count_fknown=0, count_funknown=0, count_uknown=0, count_uunknown=0;
-   Matrix temp;    // holds the force condensation
-   changeOrder(temp, total_nodes*2, total_nodes*2);
-   changeOrder(kglobalcond, total_nodes*2, total_nodes*2);
+	int count_fknown=0, count_funknown=0, count_uknown=0, count_uunknown=0;
+	Matrix temp;	 // holds the force condensation
+	changeOrder(temp, total_nodes*2, total_nodes*2);
+	changeOrder(kglobalcond, total_nodes*2, total_nodes*2);
 
-   // condensing for forces
-   // known forces at top
-   for (i=0; i<2*total_nodes; i++)
-     	if (knowledgeF[i]=='y')
+	// condensing for forces
+	// known forces at top
+	for (i=0; i<2*total_nodes; i++)
+		if (knowledgeF[i]=='y')
 		{
-      	Fknown.mat[count_fknown][0]=force.mat[i][0];
-         for (j=0; j<2*total_nodes; j++)
-         	temp.mat[count_fknown][j]=kglobal.mat[i][j];
-         count_fknown++;
-	   }
+	 	Fknown.mat[count_fknown][0]=force.mat[i][0];
+		 for (j=0; j<2*total_nodes; j++)
+		 	temp.mat[count_fknown][j]=kglobal.mat[i][j];
+		 count_fknown++;
+		}
 
-   // unknown forces at bottom
-   for (i=0; i<2*total_nodes; i++)
-     	if (knowledgeF[i]=='n')
+	// unknown forces at bottom
+	for (i=0; i<2*total_nodes; i++)
+		if (knowledgeF[i]=='n')
 		{
-      	Funknown.mat[count_funknown][0]=force.mat[i][0];
-         for (j=0; j<2*total_nodes; j++)
-         	temp.mat[count_fknown+count_funknown][j]=kglobal.mat[i][j];
-         count_funknown++;
-      }
+	 	Funknown.mat[count_funknown][0]=force.mat[i][0];
+		 for (j=0; j<2*total_nodes; j++)
+		 	temp.mat[count_fknown+count_funknown][j]=kglobal.mat[i][j];
+		 count_funknown++;
+	 }
 
-   //condensing for displacements
-   // known displacements at the top
-   for (i=0; i<2*total_nodes; i++)
-     	if (knowledgeu[i]=='y')
+	//condensing for displacements
+	// known displacements at the top
+	for (i=0; i<2*total_nodes; i++)
+		if (knowledgeu[i]=='y')
 		{
-      	uknown.mat[count_uknown][0]=displacement.mat[i][0];
-         for (j=0; j<2*total_nodes; j++)
-         	kglobalcond.mat[j][count_uknown]=temp.mat[j][i];
-         count_uknown++;
-      }
-   // unknown displacements at the bottom
-   for (i=0; i<2*total_nodes; i++)
-     	if (knowledgeu[i]=='n')
+	 	uknown.mat[count_uknown][0]=displacement.mat[i][0];
+		 for (j=0; j<2*total_nodes; j++)
+		 	kglobalcond.mat[j][count_uknown]=temp.mat[j][i];
+		 count_uknown++;
+	 }
+	// unknown displacements at the bottom
+	for (i=0; i<2*total_nodes; i++)
+		if (knowledgeu[i]=='n')
 		{
-      	uknown.mat[count_uunknown][0]=displacement.mat[i][0];
-         for (j=0; j<2*total_nodes; j++)
-         	kglobalcond.mat[j][count_uknown+count_uunknown]=temp.mat[j][i];
-         count_uunknown++;
-      }
+	 	uknown.mat[count_uunknown][0]=displacement.mat[i][0];
+		 for (j=0; j<2*total_nodes; j++)
+		 	kglobalcond.mat[j][count_uknown+count_uunknown]=temp.mat[j][i];
+		 count_uunknown++;
+	 }
 
-   changeOrder(Fknown, count_fknown, 1);
-   changeOrder(Funknown, count_funknown, 1);
-   changeOrder(uknown, count_uknown, 1);
-   changeOrder(uknown, count_uunknown, 1);
+	changeOrder(Fknown, count_fknown, 1);
+	changeOrder(Funknown, count_funknown, 1);
+	changeOrder(uknown, count_uknown, 1);
+	changeOrder(uknown, count_uunknown, 1);
 
-   // create the matrices K11, K12, K21 and K22
-   // f known, u known
-   for (i=0; i<count_fknown; i++)
+	// create the matrices K11, K12, K21 and K22
+	// f known, u known
+	for (i=0; i<count_fknown; i++)
 		for (j=0; j<count_uknown; j++)
-        	k11.mat[i][j]=kglobalcond.mat[i][j];
-   // f known, u unknown
-   for (i=0; i<count_fknown; i++)
+			k11.mat[i][j]=kglobalcond.mat[i][j];
+	// f known, u unknown
+	for (i=0; i<count_fknown; i++)
 		for (j=0; j<count_uunknown; j++)
-        	k12.mat[i][j]=kglobalcond.mat[i][count_uknown+j];
-   // f unknown, u known
-   for (i=0; i<count_funknown; i++)
+			k12.mat[i][j]=kglobalcond.mat[i][count_uknown+j];
+	// f unknown, u known
+	for (i=0; i<count_funknown; i++)
 		for (j=0; j<count_uknown; j++)
-        	k21.mat[i][j]=kglobalcond.mat[count_fknown+i][j];
-   // f unknown, u unknown
-   for (i=0; i<count_funknown; i++)
+			k21.mat[i][j]=kglobalcond.mat[count_fknown+i][j];
+	// f unknown, u unknown
+	for (i=0; i<count_funknown; i++)
 		for (j=0; j<count_uunknown; j++)
-        	k22.mat[i][j]=kglobalcond.mat[count_fknown+i][count_uknown+j];
-   changeOrder(k11, count_fknown, count_uknown);
-   changeOrder(k12, count_fknown, count_uunknown);
-   changeOrder(k21, count_funknown, count_uknown);
-   changeOrder(k22, count_funknown, count_uunknown);
+			k22.mat[i][j]=kglobalcond.mat[count_fknown+i][count_uknown+j];
+	changeOrder(k11, count_fknown, count_uknown);
+	changeOrder(k12, count_fknown, count_uunknown);
+	changeOrder(k21, count_funknown, count_uknown);
+	changeOrder(k22, count_funknown, count_uunknown);
 }
 
 void Truss::solve()
 {
 	uunknown = (~k12) * (Fknown - k11*uknown);
-   Funknown = k21*uknown + k22*uunknown;
+	Funknown = k21*uknown + k22*uunknown;
 
 	int i, j;
-   Matrix ulocal, uglobal;
-   changeOrder(uglobal, 2*total_nodes, 1);
-   changeOrder(ulocal, 4, 1);
+	Matrix ulocal, uglobal;
+	changeOrder(uglobal, 2*total_nodes, 1);
+	changeOrder(ulocal, 4, 1);
 
-   // find global displacement matrix
-   int a=0, b=0;
-   for (i=0; i<2*total_nodes; i++)
-   {
-      if (knowledgeu[i] == 'y')
-   		uglobal.mat[i][0] = uknown.mat[a++][0];
-      else
-      	uglobal.mat[i][0] = uunknown.mat[b++][0];
-   }
+	// find global displacement matrix
+	int a=0, b=0;
+	for (i=0; i<2*total_nodes; i++)
+	{
+	 if (knowledgeu[i] == 'y')
+			uglobal.mat[i][0] = uknown.mat[a++][0];
+	 else
+	 	uglobal.mat[i][0] = uunknown.mat[b++][0];
+	}
 
-   a=0;
-   for (i=0; i<total_nodes-1; i++)
-      // find all local displacement matrices
-   	for (j=i+1; j<total_nodes; j++)
-      {
-      	if (connectivity[i][j] == 'y')
-         {
-         	ulocal.mat[0][0] = uglobal.mat[2*i][0];
-         	ulocal.mat[1][0] = uglobal.mat[2*i+1][0];
-         	ulocal.mat[2][0] = uglobal.mat[2*j][0];
-         	ulocal.mat[3][0] = uglobal.mat[2*j+1][0];
+	a=0;
+	for (i=0; i<total_nodes-1; i++)
+	 // find all local displacement matrices
+		for (j=i+1; j<total_nodes; j++)
+	 {
+	 	if (connectivity[i][j] == 'y')
+		 {
+		 	ulocal.mat[0][0] = uglobal.mat[2*i][0];
+		 	ulocal.mat[1][0] = uglobal.mat[2*i+1][0];
+		 	ulocal.mat[2][0] = uglobal.mat[2*j][0];
+		 	ulocal.mat[3][0] = uglobal.mat[2*j+1][0];
 
-            locforce[a] = klocal[a]*ulocal;
-            a++;
-            changeOrder(locforce[a], 4, 1);
-         }
-      }
+			locforce[a] = klocal[a]*ulocal;
+			a++;
+			changeOrder(locforce[a], 4, 1);
+		 }
+	 }
+}
+
+
+// Modify the area of the truss elements
+void Truss::modifyArea(double new_area[])
+{
+	for (int i=0; i<total_members; i++)
+		area[i] = new_area[i];
 }
 
 // prints all the matrices
 void Truss::printMatrices()
 {
 	int i;
-   cout <<"\n\nThe local k matrices are";
-   for (i=0; i<total_members; i++)
-   	cout <<"\n\n\tk" <<i << klocal[i];
+	cout <<"\n\nThe local k matrices are";
+	for (i=0; i<total_members; i++)
+		cout <<"\n\n\tk" <<i << klocal[i];
 
 	cout <<"\n\n\nThe uncondensed global k matrix is\n" <<kglobal;
 	cout <<"\n\n\nThe condensed global k matrix is\n" <<kglobalcond;
 
-   cout <<"\n\n\n\t\tK11=" << k11 <<"\n\n\t\tK12=" << k12
-   		<<"\n\n\t\tK21=" << k21 <<"\n\n\t\tK22=" << k22;
+	cout <<"\n\n\n\t\tK11=" << k11 <<"\n\n\t\tK12=" << k12
+			<<"\n\n\t\tK21=" << k21 <<"\n\n\t\tK22=" << k22;
 
-   cout <<"\n\nFknown=" <<Fknown;
-   cout <<"\n\nUknown=" <<uknown;
+	cout <<"\n\nFknown=" <<Fknown;
+	cout <<"\n\nUknown=" <<uknown;
 
-   cout <<"\n\n\nUunknown=" <<uunknown;
-   cout <<"\n\nFunknown=" <<Funknown;
+	cout <<"\n\n\nUunknown=" <<uunknown;
+	cout <<"\n\nFunknown=" <<Funknown;
 
-   cout <<"\n\n\nThe forces in the members are";
-   for (i=0; i<total_members; i++)
-	   cout <<"\n\nMember #" <<i <<locforce[i];
-
+	cout <<"\n\n\nThe forces in the members are";
+	for (i=0; i<total_members; i++)
+		cout <<"\n\nMember #" <<i <<locforce[i];
 }
+
+
+class DE
+{
+	private:
+		Truss *T;
+		double *fitness;
+		double avg_fitness, best_fitness;
+		int best_fitness_loc;
+		char file[]; // name of the data file
+		
+		int POPULATION;
+		double CR, F;
+		
+	public:
+		DE();
+		void getData();
+		void findFitness();
+		void findFitnessLast();
+		void evolution();
+};
+
+// Constructor
+DE::DE()
+{
+	T = new Truss[POPULATION+1];
+	fitness = new double[POPULATION+1];
+	strcpy(file, "truss.dat");
+	for (int i=0; i<POPULATION+1; i++)
+	{
+		T[i].getData();
+	
+		// Random initilization of area
+		double *a = new double[POPULATION+1];
+		for (i=0; i<T[i].members(); i++)
+			a[i] = randomBetween(MAX_AREA, MIN_AREA);
+		T[i].modifyArea(a);
+		delete[] a;
+	}
+	findFitness();
+}
+
+
+// Get the DE parameters
+void DE::getData()
+{
+	ifstream File("de.dat");
+	File >>POPULATION >>F >>CR;
+	File.close();
+}
+
+// Find the fitnesses inclusive of penalty
+// Also finds the best and average fitness
+void DE::findFitness()
+{
+	int i, j;
+	for (i=0; i<POPULATION; i++)
+	{
+		// Solve and obtain the forces in the members
+		T[i].findKLocal(); T[i].findKGlobal(); T[i].condense(); T[i].solve();
+	
+		fitness[i] = T[i].area[0];
+		for (j=1; j<=T[i].members(); j++)
+		{
+			fitness[i] += T[i].area[j];
+			double t = T[i].locforce[j].mat[0][0]*T[i].locforce[j].mat[0][0] + 
+				T[i].locforce[j].mat[1][1]*T[i].locforce[j].mat[1][1];
+			if (sqrt(t) / T[i].area[j] >= MAX_STRESS)
+				fitness[i] += PENALTY;
+		}
+	}
+	
+	best_fitness = fitness[0]; best_fitness_loc = 0;
+	avg_fitness = fitness[0]; 
+	for (i=1; i<POPULATION; i++)
+	{
+		if (fitness[i] < fitness[best_fitness_loc])
+		{
+			best_fitness_loc = i;
+			best_fitness = fitness[i];
+		}
+		avg_fitness += fitness[i];
+	}
+	avg_fitness /= POPULATION;
+}
+	
+	
+// fitness of the last member
+void DE::findFitnessLast()
+{
+	int i, j;
+	i = POPULATION;
+	// Solve and obtain the forces in the members
+	T[i].findKLocal(); T[i].findKGlobal(); T[i].condense(); T[i].solve();
+	
+	fitness[i] = T[i].area[0];
+	for (j=1; j<=T[i].members(); j++)
+	{
+		fitness[i] += T[i].area[j];
+		double t = T[POPULATION].locforce[j].mat[0][0]*T[POPULATION].locforce[j].mat[0][0] + 
+				T[POPULATION].locforce[j].mat[1][1]*T[POPULATION].locforce[j].mat[1][1];
+		if (sqrt(t) / T[i].area[j] >= MAX_STRESS)
+			fitness[i] += PENALTY;
+	}
+	
+
+	if (fitness[i] < fitness[best_fitness_loc])
+	{
+		best_fitness_loc = i;
+		best_fitness = fitness[i];
+	}
+}
+
+
+
+// Main algorithm for evolution
+void DE::evolution()
+{
+	int i, j, k;
+	// initialize the design vectors
+	// repeat till convergence
+	i = 0;
+	
+	Truss temp;
+	temp.getData();
+	int GENERATION = 0;
+	while (avg_fitness - best_fitness >= 0.0001 && GENERATION < 10000)
+	{
+		findFitness();
+		GENERATION++;
+
+		int r1 = randomBetween(0, POPULATION);
+		int r2 = randomBetween(0, POPULATION);
+		int r3 = randomBetween(0, POPULATION);
+		int r4 = randomBetween(0, POPULATION);
+
+		// Diffenential mutation		
+		for (j=0; j<=T[i].members(); j++)
+		{
+			temp.area[j] = T[best_fitness_loc].area[j] + F * (T[r1].area[j] - T[r2].area[j]);
+			if (temp.area[j] <= MIN_AREA) temp.area[j] = MIN_AREA;
+			if (temp.area[j] >= MAX_AREA) temp.area[j] = MAX_AREA;
+		}
+		
+		// Crossing over
+		for (j=0; j<=T[0].members(); j++)
+		{
+			if ( randomBetween(0.0, 1.0) < CR )
+				T[POPULATION].area[j] = temp.area[j];
+			else
+				T[POPULATION].area[j] = T[r3].area[j];
+		}
+		
+		// Recombination
+		findFitnessLast();
+		if (fitness[POPULATION] < fitness[r4])
+			for (j=0; j<T[0].members(); j++)
+				T[r3].area[j] = T[POPULATION].area[j];
+	}
+}
+
+
 
 int main()
 {
-   cout.precision(3);
-	Truss T;
-   T.findKLocal();
-   T.findKGlobal();
-   T.condense();
-   T.solve();
-   T.printMatrices();
+	cout.precision(3);
+	DE truss_opti;
 }
 
 
