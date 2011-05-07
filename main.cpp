@@ -2,10 +2,9 @@
 
 int main()
 {
-	cout.precision(7);
+	cout.precision(8);
 	DE opti;
 	opti.getData();
 	opti.evolution();
 	opti.printResult();
-	getch();
 }

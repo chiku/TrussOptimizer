@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <conio.h>
 #include <cmath>
 #include "matrix.cpp"
 
@@ -37,6 +36,7 @@ class Truss
 
    public:
 		double *area;
+		double *length;
 		Matrix *locforce;
 		Matrix uglobal;
 				
@@ -64,6 +64,7 @@ Truss::Truss()
 	knowledgeu = new char[MAX];
 	locforce = new Matrix[MAX];
 	area = new double[MAX];
+	length = new double[MAX];
 }
 
 
@@ -143,6 +144,7 @@ Truss::~Truss()
 	delete[] knowledgeu;
 	delete[] locforce;
 	delete[] area;
+	delete[] length;
 }
 
 
@@ -157,7 +159,7 @@ void Truss::findKLocal()
 		for(j=i+1; j<total_nodes; j++)
 			if(connectivity[i][j] == 'y' || connectivity[i][j] == 'Y')
 			{
-				len = sqrt ( (N[i].x-N[j].x)*(N[i].x-N[j].x) + (N[i].y-N[j].y)*(N[i].y-N[j].y) );
+				length[total_members] = len = sqrt ( (N[i].x-N[j].x)*(N[i].x-N[j].x) + (N[i].y-N[j].y)*(N[i].y-N[j].y) );
 				Cx = (N[j].x-N[i].x) / len;
 				Cy = (N[j].y-N[i].y) / len;
 
