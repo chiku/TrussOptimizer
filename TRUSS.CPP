@@ -14,84 +14,46 @@ struct Node
 {
 	double x;
 	double y;	// (x, y) are the coordinates
-
-	double u;
-	double v;	// (u, v) are the displacements
-   char dispx;	// y means that displacement in x direction at that point is known
-	char dispy;	// y means that displacement in y direction at that point is known
-
-	double Fx;
-	double Fy;	// (Fx, Fy) are the forces
-   char forx;  // y means that force in x direction at that point is known
-   char fory;	// y means that force in y direction at that point is known
-
-	Node();		// constructor
 	void getData();
 };
 
-Node::Node()
-{
-	x=y=u=v=Fx=Fy=0;
-	forx=fory='n';
-	dispx=dispy='n';
-}
-
+// accepts the coordinated of the node
 void Node::getData()
 {
 	cout <<"Enter the coordinates of the node(x, y): ";
 	cin >>x >>y;
 
-	cout <<"Is the force in x direction at  the node known(y/n)?";
-	cin >>forx;
-	if (forx == 'y' || forx == 'Y')
-	{
-		cout <<"Enter the x force of the node Fx: ";
-		cin >>Fx;
-	}
-	cout <<"Is the force in y direction at  the node known(y/n)?";
-   cin >>fory;
-   if (fory == 'y' || fory == 'Y')
-   {
-	cout <<"Enter the y force of the node Fy: ";
-	  cin >>Fy;
-   }
-
-	cout <<"Is the displacement in x direction at  the node known(y/n)?";
-	cin >>dispx;
-	if (dispx == 'y' || dispx == 'Y')
-	{
-		cout <<"Enter the x displacement of the node u: ";
-		cin >>u;
-	}
-	cout <<"Is the displacement in y direction at  the node known(y/n)?";
-   cin >>dispy;
-   if (dispy == 'y' || dispy == 'Y')
-   {
-   	cout <<"Enter the y displacement of the node v: ";
-   	cin >>v;
-   }
 }
 
 class Truss
 {
 	private:
-	  Node N[MAX];
-     int total_nodes;
-	  int total_members;
+		Node N[MAX];
+      Matrix force, displacement;
+		int total_nodes;
+		int total_members;
 
 		Matrix kglobal;
 		Matrix klocal[MAX];
+
 		char connectivity[MAX][MAX];
+      char knowledgeF[MAX], knowledgeu[MAX];
+      Matrix k11, k12, k21, k22;
+      Matrix Fknown, Funknown;
+      Matrix uknown, uunknown;
 
    public:
 		Truss();	// constructor accepts all input data
 		void findKLocal();
       void findKGlobal();
+      void condense();
 
       void printKLocal();
       void printKGlobal();
+      void printCondensed();
 };
 
+// implementing 2D Truss class
 Truss::Truss()
 {
    int i, j;
@@ -100,6 +62,9 @@ Truss::Truss()
    cin >>total_nodes;
 
    changeOrder(kglobal, 2*total_nodes, 2*total_nodes);
+   changeOrder(force, 2*total_nodes, 1);
+   changeOrder(displacement, 2*total_nodes, 1);
+
    for (i=0; i<2*total_nodes; i++)
    	for (j=9; j<2*total_nodes; j++)
       	kglobal.mat[i][j] = 0;
@@ -108,7 +73,29 @@ Truss::Truss()
    {
    	cout <<"\n\tNODE " <<i <<endl;
       N[i].getData();
-      connectivity[i][i] = 'n';  // a node is always connected to itself
+      connectivity[i][i] = 'n';  // avoids node being connected to itself
+
+      // input forces
+      cout <<"Is the force in x-direction known(y/n)?";
+      cin >>knowledgeF[i*2];
+      if (knowledgeF[i*2]=='y')
+      	cin >>force.mat[2*i][0];
+
+      cout <<"Is the force in y-direction known(y/n)?";
+      cin >>knowledgeF[i*2+1];
+      if (knowledgeF[i*2+1]=='y')
+      	cin >>force.mat[2*i+1][0];
+
+      // input displacement
+      cout <<"Is the displacement in x-direction known(y/n)?";
+      cin >>knowledgeu[i*2];
+      if (knowledgeu[i*2]=='y')
+      	cin >>displacement.mat[2*i][0];
+
+      cout <<"Is the displacement in y-direction known(y/n)?";
+      cin >>knowledgeu[i*2+1];
+      if (knowledgeu[i*2+1]=='y')
+      	cin >>displacement.mat[2*i+1][0];
    }
 
    for (i=0; i<total_nodes; i++)
@@ -119,6 +106,7 @@ Truss::Truss()
          connectivity[j][i] = connectivity[i][j];
       }
 }
+
 
 
 // finds all the local k matrices
@@ -182,8 +170,73 @@ void Truss::findKGlobal()
 				kglobal.mat[j*2+1][j*2+1] += klocal[mem_no].mat[3][3];
             mem_no++;
          }
-   //kglobal = scalarMult(kglobal, 0.5);
 }
+
+/* static condensation scheme to find k11, k12, k21 and k22
+	as well as Fknown, Funknown, uknownand uknown*/
+
+void Truss::condense()
+{
+	int i, j;
+   int k11i=0, k11j=0, k12i=0, k12j=0,  k21i=0, k21j=0,  k22i=0, k22j=0;
+   for (i=0; i<2*total_nodes; i++)
+   {
+   	for (j=0; j<2*total_nodes; j++)
+      {
+        	if (knowledgeF[i]=='y')
+         {
+           	if (knowledgeu[j]=='y')
+				{
+               // force known + displacement known -> K11
+            	k11.mat[k11i][k11j] = kglobal.mat[i][j];
+               /*Fknown.mat[k11i][0] = force.mat[i][0];
+               uknown.mat[k11j][0] = displacement.mat[j][0];*/
+               k11j++;
+            }
+            else
+            {
+            	// force known + displacement unknown -> K12
+            	k12.mat[k12i][k12j] = kglobal.mat[i][j];
+               //Fknown.mat[k12i][0] = force.mat[i][0];
+               k12j++;
+            }
+            k11i++;
+            k12i++;
+         }
+         else
+         {
+            if ( knowledgeu[j]=='y')
+				{
+            	// force unknown + displacement known -> K21
+            	k21.mat[k21i][k21j] = kglobal.mat[i][j];
+               //uknown.mat[k21j][0] = displacement.mat[j][0];
+               k21j++;
+            }
+            else
+            {
+            	// force unknown + displacement known -> K22
+            	k22.mat[k22i][k22j] = kglobal.mat[i][j];
+               k22j++;
+            }
+            k21i++;
+            k22i++;
+         }
+      }
+   }
+   changeOrder(k11, k11i, k11j);
+   changeOrder(k21, k21i, k21j);
+   changeOrder(k12, k12i, k12j);
+   changeOrder(k22, k22i, k22j);
+
+   changeOrder(Fknown, k11j, 1);
+   changeOrder(Funknown, k21j, 1);
+
+   changeOrder(uknown, k11i, 1);
+   changeOrder(uunknown, k21i, 1);
+}
+
+
+
 
 
 
@@ -200,24 +253,40 @@ void Truss::printKLocal()
 }
 
 // prints all the k local matrices
-void Truss::printKGlobal()
+inline void Truss::printKGlobal()
 {
-	int i;
-   cout <<"\n\nThe global k matrix is\n";
-   cout <<"\n\n\tk" <<i <<"/EA=";
+	cout <<"\n\nThe uncondensed global k matrix is\n";
+   cout <<"\n\n\tk/EA=";
    cout <<kglobal;
 }
 
 
+// prints
+inline void Truss::printCondensed()
+{
+	cout <<"\n\n\n\tThe condensed matrices are\n";
+   cout <<"\n\n\t\t\tK11/EA=" << k11;
+   cout <<"\n\n\t\t\tK12/EA=" << k12;
+   cout <<"\n\n\t\t\tK21/EA=" << k21;
+   cout <<"\n\n\t\t\tK22/EA=" << k22;
+   /*
+   cout <<"\n\n\\t\t\tFknown=" <<Fknown;
+   cout <<"\n\n\t\t\tUknown=" <<uknown;*/
+}
+
 void main()
 {
-
    cout.precision(3);
 	Truss T;
    T.findKLocal();
-   T.printKLocal();
    T.findKGlobal();
+   T.condense();
+
+   T.printKLocal();
    T.printKGlobal();
+   T.printCondensed();
+
+
 }
 
 
