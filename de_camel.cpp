@@ -125,7 +125,6 @@ void DE::evolution()
 	avg_fitness = 1e50; best_fitness = 1e49;
 	while (avg_fitness - best_fitness >= 0.000000001 && GENERATION < 10000)
 	{
-		findFitness();
 		GENERATION++;
 
 		cout <<"Gen.: " <<GENERATION <<"\tBest fit.: " <<best_fitness
@@ -162,6 +161,7 @@ void DE::evolution()
 		{
 			xvector[r4] = xvector[POPULATION];
 			yvector[r4] = yvector[POPULATION];
+			fitness[r4] = fitness[POPULATION];
 		}			
 	}
 }

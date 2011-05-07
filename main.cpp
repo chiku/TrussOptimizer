@@ -6,5 +6,6 @@ int main()
 	DE opti;
 	opti.getData();
 	opti.evolution();
+	opti.printResult();
 	getch();
 }

@@ -1,20 +1,16 @@
-8 
+6 
 
-0 0 	n n 		y 0 y 0
-12 0 	y 0 y 10 	n n
-24 0 	y 0 y 20 	n n
-36 0 	y 0 y 30 	n n
-48 0 	n n 		y 0 y 0
-12 9 	y 0 y 0 	n n
-24 9 	y 0 y 0 	n n
-36 9 	y 10 y 0 	n n
+720 0 		y 0 y 0		n n
+720 360		y 0 y 100 	n n
+360 0 		y 0 y 0 	n n
+360 360 	y 0 y 100 	n n
+0 0		 	n n 		y 0 y 0
+0 360 		n n 		y 0 y 0
 
-y 1 n n n y 1 n n
-y 1 n n y 1 n n
-y 1 n y 1 y 1 y 1
-y 1 n n y 1
-n n y 1
-y 1 n
-y 1 
-
-10
+y 9 y 9 y 9 n   n  
+    y 9 y 9 n   n
+        y 9 y 9 y 9
+            y 9 y 9
+	            n
+				
+10000

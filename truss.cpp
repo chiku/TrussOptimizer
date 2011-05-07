@@ -38,8 +38,10 @@ class Truss
    public:
 		double *area;
 		Matrix *locforce;
-		
+		Matrix uglobal;
+				
 		void getData();	// accepts all input data
+		Truss();
 		~Truss();
 		void findKLocal();
 		void findKGlobal();
@@ -52,10 +54,9 @@ class Truss
 		void printMatrices();
 };
 
-// accepts the input data
-void Truss::getData()
+
+Truss::Truss()
 {
-	int i, j;
 	N = new Node[MAX];
 	klocal = new Matrix[MAX];
 	connectivity = new char[MAX][MAX];
@@ -63,7 +64,13 @@ void Truss::getData()
 	knowledgeu = new char[MAX];
 	locforce = new Matrix[MAX];
 	area = new double[MAX];
+}
 
+
+// accepts the input data
+void Truss::getData()
+{
+	int i, j;
 	ifstream F("truss.dat");
 
 	total_members = 0; // the actual value is found in findKLocal()
@@ -172,6 +179,7 @@ void Truss::findKLocal()
 void Truss::findKGlobal()
 {
 	int i, j, mem_no=0;
+ 	zeroMatrix(kglobal);
 	for (i=0; i<total_nodes-1; i++)
 		for (j=i; j<total_nodes; j++)
 	 	if ( (connectivity[i][j] == 'Y' || connectivity[i][j] == 'y') && i!=j)
@@ -255,7 +263,7 @@ void Truss::condense()
 	changeOrder(Fknown, count_fknown, 1);
 	changeOrder(Funknown, count_funknown, 1);
 	changeOrder(uknown, count_uknown, 1);
-	changeOrder(uknown, count_uunknown, 1);
+	changeOrder(uunknown, count_uunknown, 1);
 
 	// create the matrices K11, K12, K21 and K22
 	// f known, u known
@@ -289,7 +297,7 @@ void Truss::solve()
 	Funknown = k21*uknown + k22*uunknown;
 
 	int i, j;
-	Matrix ulocal, uglobal;
+	Matrix ulocal;
 	changeOrder(uglobal, 2*total_nodes, 1);
 	changeOrder(ulocal, 4, 1);
 
@@ -351,14 +359,23 @@ void Truss::printMatrices()
 	cout <<"\n\n\nThe forces in the members are";
 	for (i=0; i<total_members; i++)
 		cout <<"\n\nMember #" <<i <<locforce[i];
+		
+	cout <<"\n\nThe global displacement matrix is" <<uglobal;
 }
 
 #endif
 
+/*
 int main()
 {
 	Truss T;
-	T.getData(); T.findKLocal(); T.findKGlobal(); T.condense(); T.solve();
+	T.getData();
+	T.findKLocal();
+	T.findKGlobal();
+	T.condense();
+	T.solve();
 	T.printMatrices();
-	getch();
+	getch();	
 }
+*/
+
