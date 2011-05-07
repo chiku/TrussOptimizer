@@ -1,4 +1,5 @@
-#include <iostream.h>
+#include <iostream>
+#include <strstream>
 
 /* IMPLEMENTING MATRIX CLASS */
 
@@ -14,6 +15,7 @@ class Matrix
    public:
      	Matrix();
       Matrix(int, int);
+      Matrix(int, int, char[]);
 
    	double element(int, int);
       double determinant();
@@ -53,6 +55,24 @@ Matrix::Matrix(int r, int c)
    	for (int j=0; j<r; j++)
       	mat[i][j]=0;
 }
+
+// three-arguement constructor
+Matrix::Matrix(int r, int c, char str[])
+{
+   if (r<=0 || c<=0)
+   {
+   	cerr <<"Order of matrix cannot be non-positive.\n";
+      return;
+   }
+   row=r;
+   col=c;
+
+   istrstream s(str);
+   for (int i=0; i<r; i++)
+   	for (int j=0; j<c; j++)
+      	s >>mat[i][j];
+}
+
 
 // returns element
 double Matrix::element(int r, int c)
@@ -261,15 +281,16 @@ ostream& operator <<(ostream& s, Matrix& A)
 
 void main()
 {
-   Matrix A(3, 3);
+   int a;
+   /*Matrix A(3, 3);
    cin >>A;
    cout <<A;
    cout <<endl;
    cout <<"Determinant = " <<A.determinant() <<endl;
-   A=-A.scalarMult(3);
-	cout <<A;
+   A=-A.scalarMult(3);*/
+   Matrix C(3, 3, "2 3 2 5.7 -2 -5.4 5 3 3 4");
+   cout <<endl <<C;
 
-   int a;
    cin >>a;
 }
 

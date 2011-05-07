@@ -1,124 +1,131 @@
-// Fem analysis of a simple truss
+// Fem analysis of a 2D truss
 
-#include <iostream.h>
+#include <iostream>
+#include <strstream>
 #include <conio.h>
 #include <math.h>
+#include "matrix.cpp"
 
+#define MAX 30
 #define EA 1E10
 
-const int MAT_MAX_SIZE  = 27;
 
-double determinant(double A[MAT_MAX_SIZE][MAT_MAX_SIZE], int n)
+struct Node
 {
-	double aux[MAT_MAX_SIZE][MAT_MAX_SIZE];
-	double d=0;
+	double x;
+	double y;	// (x, y) are the coordinates
+	double u;
+	double v;	// (u, v) are the displacements
+	double Fx;
+	double Fy;	// (Fx, Fy) are the forces
+	char dispx;	// y means that displacement in x direction at that point is known
+   char dispy;	// y means that displacement in y direction at that point is known
 
-	if (n==1)
-		return A[0][0];
-
-	if (n==2)
-		return (A[0][0]*A[1][1] - A[1][0]*A[0][1]);
-
-	for (int a=0; a<n; a++)
-	{
-		int i, j;
-		for (i=0; i<n; i++)
-		{
-			for (j=0; j<a; j++)
-				aux[i][j] = A[i+1][j];
-		}
-
-		for (i=0; i<n; i++)
-		{
-			for (j=a; j<n; j++)
-				aux[i][j] = A[i+1][j+1];
-		}
-
-		if (a%2)
-			d -= A[0][a]*determinant(aux, n-1);
-		else
-			d += A[0][a]*determinant(aux, n-1);
-	}
-	return d;
-}
-
-
-void part(double A[MAT_MAX_SIZE][MAT_MAX_SIZE], double B[MAT_MAX_SIZE][MAT_MAX_SIZE], int n, int x, int y)
-{
-	int i,j;
-	for (i=0; i<x; i++)
-	{
-	for (j=0; j<y; j++)
-		B[i][j] = A[i][j];
-	}
-	for (i=0; i<x; i++)
-	{
-		for (j=y; j<n; j++)
-			B[i][j] = A[i][j+1];
-	}
-	for (i=x; i<n; i++)
-	{
-		for (j=0; j<y; j++)
-			B[i][j] = A[i+1][j];
-	}
-	for (i=x; i<n; i++)
-	{
-		for (j=y; j<n; j++)
-			B[i][j] = A[i+1][j+1];
-	}
-}
-
-void invert(double A[MAT_MAX_SIZE][MAT_MAX_SIZE], double B[MAT_MAX_SIZE][MAT_MAX_SIZE], int n)
-{
-	double detA=determinant(A, n);
-	double temp[MAT_MAX_SIZE][MAT_MAX_SIZE];
-	int i, j;
-	if (detA == 0)
-	{
-		cout <<"The matrix has no inverse!\n";
-		return;
-	}
-	for (i=0; i<n; i++)
-	{
-		for (j=0; j<n; j++)
-		{
-			double aux[MAT_MAX_SIZE][MAT_MAX_SIZE];
-			double t;
-			part(A, aux, n, i, j);
-			t=determinant(aux, n-1);
-			temp[i][j] = t/detA;
-			if ((i+j)%2)
-				temp[i][j] = -temp[i][j];
-		}
-	}
-
-	for (i=0; i<n; i++)
-	{
-		for (j=0; j<n; j++)
-			B[i][j] = temp[j][i];
-	}
-}
-
-
-struct points
-{
-	double nodex;
-	double nodey;
-	double displacex;
-	double displacey;
-	double forcex;
-	double forcey;
+   Node();		// constructor
+   void getData();
 };
 
-points getdata(void)
+Node::Node()
 {
-	points dummy;
-	cout<<"Enter the coordinates of the node(x y): ";
-	cin>>dummy.nodex>>dummy.nodey;
-	cout<<"Enter the forces at the node(Fx Fy): ";
-	cin>>dummy.forcex>>dummy.forcey;
-	return dummy;
+	x=y=u=v=Fx=Fy=0;
+   dispx=dispy='n';
 }
+
+void Node::getData()
+{
+	cout <<"Enter the coordinates of the node(x, y): ";
+	cin >>x >>y;
+	cout <<"Enter the forces at the node(Fx, Fy): ";
+	cin >>Fx >>Fy;
+   cout <<"Is the displacements in x direction at  the node known(y/n)?";
+   cin >>dispx;
+   if (dispx == 'y' || dispx == 'Y')
+   {
+   	cout <<"Enter the displacement of the node(u, v): ";
+      cin >>u >>v;
+   }
+   cout <<"Is the displacements in y direction at  the node known(y/n)?";
+   cin >>dispy;
+   if (dispy == 'y' || dispx == 'Y')
+   {
+   	cout <<"Enter the displacement of the node(u, v): ";
+      cin >>u >>v;
+   }
+}
+
+class Truss
+{
+	private:
+      Node N[MAX];
+   	int total_nodes;
+      int total_members;
+
+      Matrix kglobal(MAX, MAX);
+      Matrix klocal[MAX];
+      char connectivity[MAX][MAX];
+
+   public:
+   	Truss();	// constructor accepts all input data
+      void findKLocal();
+
+};
+
+Truss::Truss()
+{
+   int i, j;
+   total_members = 0; // the actual value is found in findKLocal()
+	cout <<"Enter the number of nodes: ";
+   cin >>total_nodes;
+
+   for (i=0; i<total_nodes; i++)
+   {
+   	cout <<"NODE " <<i;
+      N[i].getData();
+      connectivity[i][i] = 'y';  // a node is always connected to itself
+   }
+
+   for (i=0; i<total_nodes; i++)
+   	for (j=0; j<total_nodes; j++)
+      {
+      	cout <<"Is node " <<i <<" connected to node " <<j <<" (y/n)?";
+         cin >>connectivity[i][j];
+         connectivity[j][i] = connectivity[i][j];
+      }
+}
+
+
+// finds all the local k matrices
+void Truss::findKLocal()
+{
+	total_members=0;
+   int i, j;
+   double Cx, Cy, len;
+   for(i=0; i<total_nodes-1; i++)
+		for(j=i+1; j<total_nodes; j++)
+			if(connectivity[i][j] == 'y' || connectivity[i][j] == 'Y')
+			{
+				len = sqrt( pow((N[i].x-N[j].x),2.0) + pow((N[i].y-N[j].y),2.0) );
+				Cx = (N[j].x-N[i].x) / len;
+				Cy = (N[j].y-N[i].y) / len;
+
+            char temp[500];
+            ostrstream s(temp, 500);
+            s <<-Cx <<-Cy <<Cx <<Cy;
+            Matrix t1(4, 1, temp), t2(1, 4, temp);
+            klocal[total_members] = t1*t2;
+            total_members++;
+         }
+}
+
+// finds k global
+/* The members
+Truss::findKGlobal()
+{
+
+
+
+
+
 
 void main(void)
 {
@@ -251,4 +258,4 @@ void main(void)
 	}
 
 	getch();
-}
+}              */
