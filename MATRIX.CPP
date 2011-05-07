@@ -1,14 +1,14 @@
 #include <iostream>
 #include <strstream>
+#include <process.h>
 
 /* IMPLEMENTING MATRIX */
 
 struct Matrix
 {
-  	double mat[10][10];
+  	double mat[13][13];
    int row, col;
 };
-
 
 // changes order of matrix
 void changeOrder(Matrix& A, int r, int c)
@@ -84,12 +84,12 @@ Matrix part(Matrix A, int m, int n)
 Matrix operator +(Matrix a, Matrix b)
 {
 	Matrix c;
+   changeOrder(c, a.row, a.col);
    if (a.row!=b.row || a.col!=b.col)
    {
    	cerr <<"Matries incompatible for addition.\n";
       return c;
    }
-   changeOrder(c, a.row, a.col);
    for (int i=0; i<a.row; i++)
    	for (int j=0; j<a.col; j++)
       	c.mat[i][j]=a.mat[i][j]+b.mat[i][j];
@@ -100,13 +100,13 @@ Matrix operator +(Matrix a, Matrix b)
 Matrix operator -(Matrix A, Matrix B)
 {
 	Matrix C;
+   changeOrder(C, A.row, A.col);
    if (A.row!=B.row || A.col!=B.col)
    {
    	cerr <<"Matries incompatible for subtraction.\n";
       return C;
    }
-   changeOrder(C, A.row, A.col);
-   for (int i=0; i<A.row; i++)
+	for (int i=0; i<A.row; i++)
    	for (int j=0; j<A.col; j++)
       	C.mat[i][j]=A.mat[i][j]-B.mat[i][j];
    return C;
@@ -116,12 +116,12 @@ Matrix operator -(Matrix A, Matrix B)
 Matrix operator *(Matrix A, Matrix B)
 {
 	Matrix C;
+   changeOrder(C, A.row, B.col);
    if (A.col!=B.row)
    {
    	cerr <<"Matries incompatible for multiplication.\n";
       return C;
    }
-   changeOrder(C, A.row, B.col);
    int i, j, k;
    for (i=0; i<A.row; i++)
 	  	for (j=0; j<B.col; j++)
@@ -166,13 +166,13 @@ Matrix operator ~(Matrix A)
 {
 	double detA=determinant(A);
 	Matrix temp;
+	changeOrder(temp, A.row, A.col);
 	int i, j;
 	if (detA == 0 || A.row!=A.col)
 	{
 		cout <<"The matrix has no inverse!\n";
 		return temp;
 	}
-   changeOrder(temp, A.row, A.col);
    int n=A.row;
 
 	for (i=0; i<n; i++)
@@ -211,24 +211,3 @@ ostream& operator <<(ostream& s, Matrix& A)
    return s;
 }
 
-/*
-void main()
-{
-   int a;
-   Matrix C, D;
-   changeOrder(C, 1, 4);
-   changeOrder(D, 4, 1);
-   C.mat[0][0]=1; C.mat[0][1]=2;
-   C.mat[0][2]=2; C.mat[0][3]=3;
-
-	D.mat[0][0]=3; D.mat[1][0]=2;
-   D.mat[2][0]=4; D.mat[3][0]=3;
-
-   Matrix E=C*D;
-   cout <<endl <<E;
-   cout <<endl <<C;
-   cout <<endl <<D;
-
-   cin >>a;
-}
-  */

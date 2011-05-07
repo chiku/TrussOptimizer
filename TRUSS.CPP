@@ -6,9 +6,7 @@
 #include <math.h>
 #include "matrix.cpp"
 
-const int MAX = 20;
-#define EA 1E10
-
+const int MAX = 10;
 
 struct Node
 {
@@ -31,17 +29,21 @@ class Truss
 {
 	private:
 		int total_nodes, total_members;
-      Node N[MAX];
+      Node *N;
       Matrix force, displacement;
-      Matrix kglobal, kglobalcond, klocal[MAX];
+      double *area;
+      Matrix kglobal, kglobalcond, *klocal;
 		Matrix k11, k12, k21, k22;
       Matrix Fknown, Funknown, uknown, uunknown;
+      Matrix *locforce;
+      double E;
 
-		char connectivity[MAX][MAX];
-      char knowledgeF[MAX], knowledgeu[MAX];
+		char (*connectivity)[MAX];
+      char *knowledgeF, *knowledgeu;
 
    public:
 		Truss();	// constructor accepts all input data
+      ~Truss();
 		void findKLocal();
       void findKGlobal();
       void condense();
@@ -54,6 +56,14 @@ class Truss
 Truss::Truss()
 {
    int i, j;
+   N = new Node[MAX];
+   klocal = new Matrix[MAX];
+   connectivity = new char[MAX][MAX];
+   knowledgeF = new char[MAX];
+   knowledgeu = new char[MAX];
+   locforce = new Matrix[MAX];
+   area = new double[MAX];
+
    total_members = 0; // the actual value is found in findKLocal()
 	cout <<"Enter the number of nodes: ";
    cin >>total_nodes;
@@ -95,15 +105,32 @@ Truss::Truss()
       	cin >>displacement.mat[2*i+1][0];
    }
 
+	int a=0;
    for (i=0; i<total_nodes; i++)
    	for (j=i+1; j<total_nodes; j++)
       {
       	cout <<"Is node " <<i <<" connected to node " <<j <<" (y/n)?";
          cin >>connectivity[i][j];
          connectivity[j][i] = connectivity[i][j];
+         cout <<"Enter the area of the node: ";
+         cin >>area[a++];
       }
+   cout <<"Enter the value of E: ";
+   cin >>E;
 }
 
+
+Truss::~Truss()
+{
+	delete[] klocal;
+   delete[] N;
+   delete[] klocal;
+   delete[]connectivity;
+   delete[]knowledgeF;
+   delete[]knowledgeu;
+   delete[] locforce;
+   delete[] area;
+}
 
 
 // finds all the local k matrices
@@ -115,6 +142,7 @@ void Truss::findKLocal()
 
    for(i=0; i<total_nodes; i++)
    	for(j=i+1; j<total_nodes; j++)
+      {
       	if(connectivity[i][j] == 'y' || connectivity[i][j] == 'Y')
 			{
 				len = sqrt( pow((N[i].x-N[j].x),2.0) + pow((N[i].y-N[j].y),2.0) );
@@ -130,8 +158,10 @@ void Truss::findKLocal()
             				klocal[total_members].mat[3][2]=klocal[total_members].mat[2][3]=Cx*Cy/len;
 				klocal[total_members].mat[3][0]=klocal[total_members].mat[0][3]=
             				klocal[total_members].mat[1][2]=klocal[total_members].mat[2][1]=-Cx*Cy/len;
+            klocal[total_members] = scalarMult(klocal[total_members], E*area[total_members]);
             total_members++;
          }
+      }
 }
 
 // finds the uncondensed k global matrix
@@ -244,7 +274,44 @@ void Truss::condense()
    changeOrder(k22, count_funknown, count_uunknown);
 }
 
+void Truss::solve()
+{
+	uunknown = (~k12) * (Fknown - k11*uknown);
+   Funknown = k21*uknown + k22*uunknown;
 
+	int i, j;
+   Matrix ulocal, uglobal;
+   changeOrder(uglobal, 2*total_nodes, 1);
+   changeOrder(ulocal, 4, 1);
+
+   // find global displacement matrix
+   int a=0, b=0;
+   for (i=0; i<2*total_nodes; i++)
+   {
+      if (knowledgeu[i] == 'y')
+   		uglobal.mat[i][0] = uknown.mat[a++][0];
+      else
+      	uglobal.mat[i][0] = uunknown.mat[b++][0];
+   }
+
+   a=0;
+   for (i=0; i<total_nodes-1; i++)
+      // find all local displacement matrices
+   	for (j=i+1; j<total_nodes; j++)
+      {
+      	if (connectivity[i][j] == 'y')
+         {
+         	ulocal.mat[0][0] = uglobal.mat[2*i][0];
+         	ulocal.mat[1][0] = uglobal.mat[2*i+1][0];
+         	ulocal.mat[2][0] = uglobal.mat[2*j][0];
+         	ulocal.mat[3][0] = uglobal.mat[2*j+1][0];
+
+            locforce[a] = klocal[a]*ulocal;
+            a++;
+            changeOrder(locforce[a], 4, 1);
+         }
+      }
+}
 
 // prints all the matrices
 void Truss::printMatrices()
@@ -252,16 +319,24 @@ void Truss::printMatrices()
 	int i;
    cout <<"\n\nThe local k matrices are";
    for (i=0; i<total_members; i++)
-   	cout <<"\n\n\tk" <<i <<"/EA="<< klocal[i];
+   	cout <<"\n\n\tk" <<i << klocal[i];
 
-	cout <<"\n\n\nThe uncondensed global k/EA matrix is\n" <<kglobal;
-	cout <<"\n\n\nThe condensed global k/EA matrix is\n" <<kglobalcond;
+	cout <<"\n\n\nThe uncondensed global k matrix is\n" <<kglobal;
+	cout <<"\n\n\nThe condensed global k matrix is\n" <<kglobalcond;
 
-   cout <<"\n\n\n\t\tK11/EA=" << k11 <<"\n\n\t\tK12/EA=" << k12
-   		<<"\n\n\t\tK21/EA=" << k21 <<"\n\n\t\tK22/EA=" << k22;
+   cout <<"\n\n\n\t\tK11=" << k11 <<"\n\n\t\tK12=" << k12
+   		<<"\n\n\t\tK21=" << k21 <<"\n\n\t\tK22=" << k22;
 
    cout <<"\n\nFknown=" <<Fknown;
    cout <<"\n\nUknown=" <<uknown;
+
+   cout <<"\n\n\nUunknown=" <<uunknown;
+   cout <<"\n\nFunknown=" <<Funknown;
+
+   cout <<"\n\n\nThe forces in the members are";
+   for (i=0; i<total_members; i++)
+	   cout <<"\n\nMember #" <<i <<locforce[i];
+
 }
 
 void main()
@@ -271,7 +346,7 @@ void main()
    T.findKLocal();
    T.findKGlobal();
    T.condense();
-
+   T.solve();
    T.printMatrices();
 }
 
