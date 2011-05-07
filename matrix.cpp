@@ -1,41 +1,41 @@
 #include <iostream.h>
+
 /* IMPLEMENTING MATRIX CLASS */
 
-template <class T>
 class Matrix
 {
 	private:
-   	T mat[20][20];
+   	double mat[20][20];
       int row, col;
 
       void changeOrder(int, int);
 
+
    public:
+     	Matrix();
+      Matrix(int, int);
+
    	Matrix matAdd(Matrix, Matrix);
       Matrix matSub(Matrix, Matrix);
       Matrix matMul(Matrix, Matrix);
+      Matrix invert();
 
-      T element(int, int);
-      T determinant(Matrix);
+      double element(int, int);
+      double determinant();
       void getMatrix();
       void printMatrix();
-
-   public:
-   	Matrix();
-      Matrix(int, int);
+      Matrix part(int, int);
 };
 
 // no-arguement constructor
-template <class T>
-Matrix<T>::Matrix()
+Matrix::Matrix()
 {
 	row=col=1;
 	mat[0][0]=0;
 }
 
 // two-arguement constructor
-template <class T>
-Matrix<T>::Matrix(int r, int c)
+Matrix::Matrix(int r, int c)
 {
    if (r<=0 || c<=0)
    {
@@ -49,10 +49,21 @@ Matrix<T>::Matrix(int r, int c)
       	mat[i][j]=0;
 }
 
+// returns element
+double Matrix::element(int r, int c)
+{
+	return mat[r][c];
+}
+
+// changes order of matrix
+void Matrix::changeOrder(int r, int c)
+{
+	row=r;
+   col=c;
+}
 
 // matrix addition
-template <class T>
-Matrix Matrix<T>::matAdd(Matrix a, Matrix b)
+Matrix Matrix::matAdd(Matrix a, Matrix b)
 {
 	Matrix c;
    if (a.row!=b.row || a.col!=b.col)
@@ -63,85 +74,88 @@ Matrix Matrix<T>::matAdd(Matrix a, Matrix b)
    c.changeOrder(a.row, a.col);
    for (int i=0; i<a.row; i++)
    	for (int j=0; j<a.col; j++)
-      	c.element(i, j)=a.element(i, j)+b.element(i, j);
+      	c.mat[i][j]=a.element(i, j)+b.element(i, j);
    return c;
 }
 
 // matrix subtraction
-template <class T>
-Matrix Matrix<T>::matSub(Matrix a, Matrix b)
+Matrix Matrix::matSub(Matrix A, Matrix B)
 {
-	Matrix c;
-   if (a.row!=b.row || a.col!=b.col)
+	Matrix C;
+   if (A.row!=B.row || A.col!=B.col)
    {
    	cerr <<"Matries incompatible for subtraction.\n";
-      return c;
+      return C;
    }
-   c.changeOrder(a.row, a.col)
-   for (int i=0; i<a.row; i++)
-   	for (int j=0; j<a.col; j++)
-      	c.element(i, j)=a.element(i, j)-b.element(i, j);
-   return c;
+   C.changeOrder(A.row, A.col);
+   for (int i=0; i<A.row; i++)
+   	for (int j=0; j<A.col; j++)
+      	C.mat[i][j]=A.element(i, j)-B.element(i, j);
+   return C;
 }
 
 // matrix multiplication
-template <class T>
-Matrix Matrix<T>::matMul(Matrix a, Matrix b)
+Matrix Matrix::matMul(Matrix A, Matrix B)
 {
-	Matrix c;
-   if (a.col!=b.row)
+	Matrix C;
+   if (A.col!=B.row)
    {
    	cerr <<"Matries incpmpatible for multiplication.\n";
-      return c;
+      return C;
    }
-   c.changeOrder(a.row, b.col);
-   for (int i=0; i<a.row; i++)
-   	for (int j=0; j<b.col; b++)
-        	for (int k=0; k<a.col; k++)
-         	c[i][j] += a[i][k] + b[i][j];
-   return c;
+   C.changeOrder(A.row, B.col);
+   int i, j, k;
+   for (i=0; i<A.row; i++)
+	  	for (j=0; j<B.col; j++)
+        	for (k=0; k<A.col; k++)
+         	C.mat[i][j] += A.element(i, k) * B.element(i, j);
+
+   return C;
 }
 
-/*
+
 // determines corresponding determinant
-template <class T>
-T Matrix<T>::determinant(T A)
+double Matrix::determinant()
 {
 	Matrix aux;
-	T d=0;
+	double d=0;
 
-	if (n==1)
-		return A[0][0];
+   int n;
+   if (row!=col)
+   {
+   	cerr <<"\nOnly square matrices can have corresponding determinants.";
+      return d;
+   }
+   n=row;
+
+   if (n==1)
+		return mat[0][0];
 
 	if (n==2)
-		return (A[0][0]*A[1][1] - A[1][0]*A[0][1]);
+		return (mat[0][0]*mat[1][1] - mat[1][0]*mat[0][1]);
 
+   aux.changeOrder(n-1, n-1);
 	for (int a=0; a<n; a++)
 	{
 		int i, j;
 		for (i=0; i<n; i++)
-		{
 			for (j=0; j<a; j++)
-				aux[i][j] = A[i+1][j];
-		}
+				aux.mat[i][j] = mat[i+1][j];
 
 		for (i=0; i<n; i++)
-		{
 			for (j=a; j<n; j++)
-				aux[i][j] = A[i+1][j+1];
-		}
+				aux.mat[i][j] = mat[i+1][j+1];
 
 		if (a%2)
-			d -= A[0][a]*determinant(aux, n-1);
+			d -= mat[0][a]*aux.determinant();
 		else
-			d += A[0][a]*determinant(aux, n-1);
+			d += mat[0][a]*aux.determinant();
 	}
 	return d;
-}    */
+}
 
 // accept matrix from console
-template <class T>
-void Matrix<T>::getMatrix()
+void Matrix::getMatrix()
 {
 	for (int i=0; i<row; i++)
       for (int j=0; j<col; j++)
@@ -149,8 +163,7 @@ void Matrix<T>::getMatrix()
 }
 
 // prints matrix to console
-template <class T>
-void Matrix<T>::printMatrix()
+void Matrix::printMatrix()
 {
 	for (int i=0; i<row; i++)
    {
@@ -161,75 +174,68 @@ void Matrix<T>::printMatrix()
 }
 
 
-void main()
+// used in finding the inverse of matrix
+Matrix Matrix::part(int m, int n)
 {
-   Matrix<double> A(2, 2), B(2, 2);
-   A.getMatrix();
-   B.getMatrix();
-   A.printMatrix();
-   B.printMatrix();
-   Matrix<double> C(2, 2);
-   C=C.matAdd(A, B);
-   C.printMatrix();
-}
-
-
-
-/*
-void part(double A[MAT_MAX_SIZE][MAT_MAX_SIZE], double B[MAT_MAX_SIZE][MAT_MAX_SIZE], int n, int x, int y)
-{
+   Matrix B;
+   B.changeOrder(row-1, col-1);
 	int i,j;
-	for (i=0; i<x; i++)
-	{
-	for (j=0; j<y; j++)
-		B[i][j] = A[i][j];
-	}
-	for (i=0; i<x; i++)
-	{
-		for (j=y; j<n; j++)
-			B[i][j] = A[i][j+1];
-	}
-	for (i=x; i<n; i++)
-	{
-		for (j=0; j<y; j++)
-			B[i][j] = A[i+1][j];
-	}
-	for (i=x; i<n; i++)
-	{
-		for (j=y; j<n; j++)
-			B[i][j] = A[i+1][j+1];
-	}
+	for (i=0; i<m; i++)
+		for (j=0; j<n; j++)
+			B.mat[i][j] = element(i, j);
+	for (i=0; i<m; i++)
+		for (j=n; j<col; j++)
+			B.mat[i][j] = element(i, j+1);
+
+	for (i=m; i<row; i++)
+		for (j=0; j<n; j++)
+			B.mat[i][j] = element(i+1, j);
+	for (i=m; i<row; i++)
+		for (j=n; j<col; j++)
+			B.mat[i][j] = element(i+1, j+1);
+   return B;
 }
 
 
-void invert(double A[MAT_MAX_SIZE][MAT_MAX_SIZE], double B[MAT_MAX_SIZE][MAT_MAX_SIZE], int n)
+Matrix Matrix::invert()
 {
-	double detA=determinant(A, n);
-	double temp[MAT_MAX_SIZE][MAT_MAX_SIZE];
+	double detA=determinant();
+	Matrix temp;
 	int i, j;
-	if (detA == 0)
+	if (detA == 0 || row!=col)
 	{
 		cout <<"The matrix has no inverse!\n";
-		return;
+		return temp;
 	}
-	for (i=0; i<n; i++)
-	{
-		for (j=0; j<n; j++)
-		{
-			double aux[MAT_MAX_SIZE][MAT_MAX_SIZE];
-			double t;
-			part(A, aux, n, i, j);
-			t=determinant(aux, n-1);
-			temp[i][j] = t/detA;
-			if ((i+j)%2)
-				temp[i][j] = -temp[i][j];
-		}
-	}
+   temp.changeOrder(row, col);
+   int n=row;
 
 	for (i=0; i<n; i++)
-	{
 		for (j=0; j<n; j++)
-			B[i][j] = temp[j][i];
+		{
+			double t;
+         Matrix aux(n, n);
+			aux=part(i, j);
+			t=aux.determinant();
+			temp.mat[j][i] = t/detA;
+			if ((i+j)%2)
+				temp.mat[j][i] = -temp.mat[j][i];
 	}
+   return temp;
 }
-*/
+
+
+
+void main()
+{
+   Matrix A(3, 3);
+   A.getMatrix();
+   A.printMatrix();
+   cout <<endl;
+   cout <<"Determinant = " <<A.determinant() <<endl;
+   Matrix C(3, 3);
+   C=A.invert();
+   C.printMatrix();
+   int a;
+   cin >>a;
+}
