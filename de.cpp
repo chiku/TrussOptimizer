@@ -22,16 +22,13 @@ inline double randomBetween(double a, double b) // [a, b)
 }
 
 
-
 class DE
 {
 	private:
 		Truss *T;
 		double *fitness;
-		bool *change; // update the fitness of only if change equals true
-		double avg_fitness, best_fitness;
+		double avg_fitness, best_fitness, total_fitness;
 		int best_fitness_loc;
-		int total_evals; // total truss evaluations required in the whole process
 		
 		double MIN_AREA, MAX_AREA;  // geometric constraints
 		double MAX_STRESS, MAX_DISP; // behaviour constraints
@@ -41,7 +38,8 @@ class DE
 
 	protected:
 		void findFitness();
-		void findFitnessLast();		
+		void findBestFitness(); // the fittest solution
+		void findFitnessTrial(); // fitness of the trial solution
 
 	public:
 		DE();
@@ -64,8 +62,6 @@ class DE
 			cout <<"\n\nThe member area are\n";
 			for (i=0; i<T[0].members(); i++)
 				cout <<"Member no "<< i <<" " <<T[best_fitness_loc].area[i] <<endl;
-				
-			cout <<"\n\nTotal truss evaluations performed: " <<total_evals <<endl;
 		}
 };
 
@@ -76,16 +72,13 @@ DE::DE()
 	
 	T = new Truss[POPULATION+1];
 	fitness = new double[POPULATION+1];
-	change = new bool[POPULATION+1];
 	for (int i=0; i<POPULATION+1; i++)
 	{
 		T[i].getData();
 		// Random initilization of area
 		for (int j=0; j<T[i].members(); j++)
 			T[i].area[j] = randomBetween(MIN_AREA, MAX_AREA);
-		change[i] = true;
 	}
-	total_evals = 0;
 }
 
 
@@ -93,7 +86,6 @@ DE::~DE()
 {
 	delete[] T;
 	delete[] fitness;
-	delete[] change;
 }
 
 
@@ -109,80 +101,79 @@ void DE::getData()
 }
 
 // Find the fitnesses inclusive of penalty
-// Also finds the best and average fitness
 void DE::findFitness()
 {
 	int i, j;
 	for (i=0; i<POPULATION; i++)
 	{
 		// Solve and obtain the forces in the members
-		if (change[i] == true)
-		{
-			T[i].findKLocal(); 
-			T[i].findKGlobal(); 
-			T[i].condense(); 
-			T[i].solve();
-			total_evals++;
-			change[i] = false;
+		T[i].findKLocal(); 
+		T[i].findKGlobal(); 
+		T[i].condense(); 
+		T[i].solve();
 
-			fitness[i] = 0;
-			for (j=0; j<T[0].members(); j++)
-			{
-				fitness[i] += T[i].area[j];
-				// stress penalty
-				double t = sqrt( T[i].locforce[j].mat[0][0]*T[i].locforce[j].mat[0][0] + 
-					T[i].locforce[j].mat[1][0]*T[i].locforce[j].mat[1][0] );
-				if ( fabs(t / T[i].area[j]) >= MAX_STRESS)
-					fitness[i] += PENALTY;
-			}
-	
-			// displacement penalty		
-			for (j=0; j<T[0].uglobal.row; j++)
-				if ( fabs(T[i].uglobal.mat[j][0]) >= MAX_DISP )
-					fitness[i] += PENALTY;
+		fitness[i] = 0;
+		for (j=0; j<T[0].members(); j++)
+		{
+			fitness[i] += T[i].area[j];
+			// stress penalty
+			double t = sqrt( T[i].locforce[j].mat[0][0]*T[i].locforce[j].mat[0][0] + 
+				T[i].locforce[j].mat[1][0]*T[i].locforce[j].mat[1][0] );
+			if ( fabs(t / T[i].area[j]) >= MAX_STRESS)
+				fitness[i] += PENALTY;
 		}
+
+		// displacement penalty		
+		for (j=0; j<T[0].uglobal.row; j++)
+			if ( fabs(T[i].uglobal.mat[j][0]) >= MAX_DISP )
+				fitness[i] += PENALTY;
 	}
-	
+}
+
+
+// Find the fittest solution and the average fitness
+void DE::findBestFitness()
+{
 	best_fitness = fitness[0]; 
 	best_fitness_loc = 0;
-	avg_fitness = fitness[0]; 
-	for (i=1; i<POPULATION; i++)
+	total_fitness = fitness[0]; 
+	for (int i=1; i<POPULATION; i++)
 	{
 		if (fitness[i] < fitness[best_fitness_loc])
 		{
 			best_fitness_loc = i;
 			best_fitness = fitness[i];
 		}
-		avg_fitness += fitness[i];
+		total_fitness += fitness[i];
 	}
-	avg_fitness /= POPULATION;
+	avg_fitness = total_fitness/POPULATION;
 }
-	
-	
-// fitness of the last member which is actually vtrial
-void DE::findFitnessLast()
-{
-	int i, j;
-	i = POPULATION;
-	// Solve and obtain the forces in the members
-	T[i].findKLocal(); T[i].findKGlobal(); T[i].condense(); T[i].solve();
-	total_evals++;
-	
-	fitness[i] = 0;
-	for (j=0; j<=T[i].members(); j++)
-	{
-		fitness[i] += T[i].area[j];
-		// stress penalty
-		double t = sqrt( T[i].locforce[j].mat[0][0]*T[i].locforce[j].mat[0][0] + 
-			T[i].locforce[j].mat[1][0]*T[i].locforce[j].mat[1][0] );
 
-		if ( fabs(t / T[i].area[j]) >= MAX_STRESS)
-			fitness[i] += PENALTY;
+
+// fitness of the trial solution
+void DE::findFitnessTrial()
+{
+	int j;
+	// Solve and obtain the forces in the members
+	T[POPULATION].findKLocal();
+	T[POPULATION].findKGlobal();
+	T[POPULATION].condense();
+	T[POPULATION].solve();
+	
+	fitness[POPULATION] = 0;
+	for (j=0; j<T[POPULATION].members(); j++)
+	{
+		fitness[POPULATION] += T[POPULATION].area[j];
+		// stress penalty
+		double t = sqrt( T[POPULATION].locforce[j].mat[0][0]*T[POPULATION].locforce[j].mat[0][0] + 
+			T[POPULATION].locforce[j].mat[1][0]*T[POPULATION].locforce[j].mat[1][0] );
+		if ( fabs(t / T[POPULATION].area[j]) >= MAX_STRESS)
+			fitness[POPULATION] += PENALTY;
 	}
 	// displacement penalty		
-	for (j=0; j<T[i].uglobal.row; j++)
-		if ( fabs(T[i].uglobal.mat[j][0]) >= MAX_DISP)
-			fitness[i] += PENALTY;
+	for (j=0; j<T[POPULATION].uglobal.row; j++)
+		if ( fabs(T[POPULATION].uglobal.mat[j][0]) >= MAX_DISP)
+			fitness[POPULATION] += PENALTY;
 }
 
 
@@ -194,11 +185,12 @@ void DE::evolution()
 	
 	Truss temp;
 	temp.getData();
+	findFitness();
+	findBestFitness();
+
 	long int GENERATION = 0;
-	avg_fitness = 1e50; best_fitness = 1e49;
-	while (avg_fitness - best_fitness >= 0.00001 && GENERATION < 1000000)
+	do
 	{
-		findFitness();
 		GENERATION++;
 
 		cout <<"Generation: " <<GENERATION <<"\tBest fit.: " <<best_fitness
@@ -218,7 +210,7 @@ void DE::evolution()
 			if (temp.area[j] >= MAX_AREA) temp.area[j] = MAX_AREA;
 		}
 
-		// Crossing over
+		// Recombination
 		for (j=0; j<=T[0].members(); j++)
 		{
 			double CR = randomBetween(CR_MIN, CR_MAX);
@@ -228,16 +220,26 @@ void DE::evolution()
 				T[POPULATION].area[j] = T[r4].area[j];
 		}
 
-		
-		// Recombination
-		findFitnessLast();
+		// Selection
+		findFitnessTrial();
 		if (fitness[POPULATION] < fitness[r5])
 		{
 			for (j=0; j<T[0].members(); j++)
 				T[r5].area[j] = T[POPULATION].area[j];
-			change[r5] = true; // would be requiring a change
+			
+			// update fitnesses
+			total_fitness = total_fitness - fitness[r5] + fitness[POPULATION];
+			avg_fitness = total_fitness / POPULATION;
+			fitness[r5] = fitness[POPULATION];
+			
+			// check if we found the fittest solution
+			if (fitness[r5] < best_fitness)
+			{
+				best_fitness = fitness[r5];
+				best_fitness_loc = r5;
+			}
 		}
-	}
+	}while (avg_fitness - best_fitness >= 0.0001 & GENERATION < 5000);
 }
 
 #endif

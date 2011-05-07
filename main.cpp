@@ -2,7 +2,7 @@
 
 int main()
 {
-	cout.precision(8);
+	cout.precision(7);
 	DE opti;
 	opti.getData();
 	opti.evolution();
