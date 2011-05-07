@@ -3,6 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <cstdlib>
+#include <ctime>
 
 #ifndef __DE_H__
 #define __DE_H__
@@ -204,8 +206,6 @@ void DE::evolution()
 }
 
 #endif
-
-#include <ctime>
 
 int main()
 {

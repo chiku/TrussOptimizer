@@ -1,3 +1,9 @@
+To compile the program
+g++ main.cpp
+
+To run the program
+./a.out
+
 The following files are needed for TRUSS OPTIMIZATION
 1> matrix.cpp  ->  Implements matrix manipulations
 2> truss.cpp   ->  Truss solver

@@ -2,8 +2,9 @@
 
 #include <iostream>
 #include <fstream>
-#include <conio.h>
 #include <cmath>
+#include <cstdlib>
+#include <ctime>
 
 #ifndef __DE_H__
 #define __DE_H__
@@ -168,8 +169,6 @@ void DE::evolution()
 
 #endif
 
-#include <ctime>
-
 int main()
 {
 	srand(time(0));
@@ -177,7 +176,6 @@ int main()
 	DE de;
 	de.evolution();
 	de.printResult();
-	getch();
 }
 
 
