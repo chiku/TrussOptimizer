@@ -171,6 +171,8 @@ void Truss::condense()
 {
 	int i, j;
    int count_fknown=0, count_funknown=0, count_uknown=0, count_uunknown=0;
+   Matrix temp;    // holds the force condensation
+   changeOrder(temp, total_nodes*2, total_nodes*2);
    changeOrder(kglobalcond, total_nodes*2, total_nodes*2);
 
    // condensing for forces
@@ -180,7 +182,7 @@ void Truss::condense()
 		{
       	Fknown.mat[count_fknown][0]=force.mat[i][0];
          for (j=0; j<2*total_nodes; j++)
-         	kglobalcond.mat[count_fknown][j]=kglobal.mat[i][j];
+         	temp.mat[count_fknown][j]=kglobal.mat[i][j];
          count_fknown++;
 	   }
 
@@ -190,7 +192,7 @@ void Truss::condense()
 		{
       	Funknown.mat[count_funknown][0]=force.mat[i][0];
          for (j=0; j<2*total_nodes; j++)
-         	kglobalcond.mat[count_fknown+count_funknown][j]=kglobal.mat[i][j];
+         	temp.mat[count_fknown+count_funknown][j]=kglobal.mat[i][j];
          count_funknown++;
       }
 
@@ -201,16 +203,16 @@ void Truss::condense()
 		{
       	uknown.mat[count_uknown][0]=displacement.mat[i][0];
          for (j=0; j<2*total_nodes; j++)
-         	kglobalcond.mat[j][count_uknown]=kglobal.mat[i][j];
+         	kglobalcond.mat[j][count_uknown]=temp.mat[j][i];
          count_uknown++;
       }
    // unknown displacements at the bottom
    for (i=0; i<2*total_nodes; i++)
-     	if (knowledgeu[i]=='y')
+     	if (knowledgeu[i]=='n')
 		{
       	uknown.mat[count_uunknown][0]=displacement.mat[i][0];
          for (j=0; j<2*total_nodes; j++)
-         	kglobalcond.mat[j][count_uknown+count_uunknown]=kglobal.mat[i][j];
+         	kglobalcond.mat[j][count_uknown+count_uunknown]=temp.mat[j][i];
          count_uunknown++;
       }
 
