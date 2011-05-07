@@ -6,12 +6,12 @@
 #include <cmath>
 #include "matrix.cpp"
 
+#ifndef __TRUSS_H__
+#define __TRUSS_H__
+
 using namespace std;
 
-const int MAX = 10;
-const double PENALTY = 10000;
-double MIN_AREA = 1, MAX_AREA = 100, MAX_STRESS = 200;
-
+const int MAX = 100;
 
 struct Node
 {
@@ -286,7 +286,8 @@ void Truss::condense()
 
 void Truss::solve()
 {
-	uunknown = (~k12) * (Fknown - k11*uknown);
+	Matrix k12inv = k12; inv(k12inv);
+	uunknown = k12inv * (Fknown - k11*uknown);
 	Funknown = k21*uknown + k22*uunknown;
 
 	int i, j;
@@ -356,173 +357,4 @@ void Truss::printMatrices()
 		cout <<"\n\nMember #" <<i <<locforce[i];
 }
 
-
-class DE
-{
-	private:
-		Truss *T;
-		double *fitness;
-		double avg_fitness, best_fitness;
-		int best_fitness_loc;
-		char file[]; // name of the data file
-		
-		int POPULATION;
-		double CR, F;
-		
-	public:
-		DE();
-		void getData();
-		void findFitness();
-		void findFitnessLast();
-		void evolution();
-};
-
-// Constructor
-DE::DE()
-{
-	T = new Truss[POPULATION+1];
-	fitness = new double[POPULATION+1];
-	strcpy(file, "truss.dat");
-	for (int i=0; i<POPULATION+1; i++)
-	{
-		T[i].getData();
-	
-		// Random initilization of area
-		double *a = new double[POPULATION+1];
-		for (i=0; i<T[i].members(); i++)
-			a[i] = randomBetween(MAX_AREA, MIN_AREA);
-		T[i].modifyArea(a);
-		delete[] a;
-	}
-	findFitness();
-}
-
-
-// Get the DE parameters
-void DE::getData()
-{
-	ifstream File("de.dat");
-	File >>POPULATION >>F >>CR;
-	File.close();
-}
-
-// Find the fitnesses inclusive of penalty
-// Also finds the best and average fitness
-void DE::findFitness()
-{
-	int i, j;
-	for (i=0; i<POPULATION; i++)
-	{
-		// Solve and obtain the forces in the members
-		T[i].findKLocal(); T[i].findKGlobal(); T[i].condense(); T[i].solve();
-	
-		fitness[i] = T[i].area[0];
-		for (j=1; j<=T[i].members(); j++)
-		{
-			fitness[i] += T[i].area[j];
-			double t = T[i].locforce[j].mat[0][0]*T[i].locforce[j].mat[0][0] + 
-				T[i].locforce[j].mat[1][1]*T[i].locforce[j].mat[1][1];
-			if (sqrt(t) / T[i].area[j] >= MAX_STRESS)
-				fitness[i] += PENALTY;
-		}
-	}
-	
-	best_fitness = fitness[0]; best_fitness_loc = 0;
-	avg_fitness = fitness[0]; 
-	for (i=1; i<POPULATION; i++)
-	{
-		if (fitness[i] < fitness[best_fitness_loc])
-		{
-			best_fitness_loc = i;
-			best_fitness = fitness[i];
-		}
-		avg_fitness += fitness[i];
-	}
-	avg_fitness /= POPULATION;
-}
-	
-	
-// fitness of the last member
-void DE::findFitnessLast()
-{
-	int i, j;
-	i = POPULATION;
-	// Solve and obtain the forces in the members
-	T[i].findKLocal(); T[i].findKGlobal(); T[i].condense(); T[i].solve();
-	
-	fitness[i] = T[i].area[0];
-	for (j=1; j<=T[i].members(); j++)
-	{
-		fitness[i] += T[i].area[j];
-		double t = T[POPULATION].locforce[j].mat[0][0]*T[POPULATION].locforce[j].mat[0][0] + 
-				T[POPULATION].locforce[j].mat[1][1]*T[POPULATION].locforce[j].mat[1][1];
-		if (sqrt(t) / T[i].area[j] >= MAX_STRESS)
-			fitness[i] += PENALTY;
-	}
-	
-
-	if (fitness[i] < fitness[best_fitness_loc])
-	{
-		best_fitness_loc = i;
-		best_fitness = fitness[i];
-	}
-}
-
-
-
-// Main algorithm for evolution
-void DE::evolution()
-{
-	int i, j, k;
-	// initialize the design vectors
-	// repeat till convergence
-	i = 0;
-	
-	Truss temp;
-	temp.getData();
-	int GENERATION = 0;
-	while (avg_fitness - best_fitness >= 0.0001 && GENERATION < 10000)
-	{
-		findFitness();
-		GENERATION++;
-
-		int r1 = randomBetween(0, POPULATION);
-		int r2 = randomBetween(0, POPULATION);
-		int r3 = randomBetween(0, POPULATION);
-		int r4 = randomBetween(0, POPULATION);
-
-		// Diffenential mutation		
-		for (j=0; j<=T[i].members(); j++)
-		{
-			temp.area[j] = T[best_fitness_loc].area[j] + F * (T[r1].area[j] - T[r2].area[j]);
-			if (temp.area[j] <= MIN_AREA) temp.area[j] = MIN_AREA;
-			if (temp.area[j] >= MAX_AREA) temp.area[j] = MAX_AREA;
-		}
-		
-		// Crossing over
-		for (j=0; j<=T[0].members(); j++)
-		{
-			if ( randomBetween(0.0, 1.0) < CR )
-				T[POPULATION].area[j] = temp.area[j];
-			else
-				T[POPULATION].area[j] = T[r3].area[j];
-		}
-		
-		// Recombination
-		findFitnessLast();
-		if (fitness[POPULATION] < fitness[r4])
-			for (j=0; j<T[0].members(); j++)
-				T[r3].area[j] = T[POPULATION].area[j];
-	}
-}
-
-
-
-int main()
-{
-	cout.precision(3);
-	DE truss_opti;
-}
-
-
-
+#endif

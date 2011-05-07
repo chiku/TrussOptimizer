@@ -4,10 +4,20 @@
 
 using namespace std;
 
-const double TINY = 1e-10;
+#ifndef __MATRIX_H__
+#define __MATRIX_H__
+
+// to swap any two elements
+template <class T> void SWAP(T &a, T &b)
+{
+	T temp;
+	temp = a;
+	a = b;
+	b = temp;
+}
+	
 
 /* IMPLEMENTING MATRIX */
-
 struct Matrix
 {
 	double mat[13][13];
@@ -15,32 +25,39 @@ struct Matrix
 };
 
 // changes order of matrix
-void changeOrder(Matrix& A, int r, int c)
+inline void changeOrder(Matrix& A, int r, int c)
 {
-	A.row=r;
-	A.col=c;
+	A.row = r;
+	A.col = c;
 }
 
+// Make all elements of the matrix 0
+inline void zeroMatrix(Matrix& A)
+{
+	for (int i=0; i<A.row; i++)
+		for (int j=0; j<A.col; j++)
+			A.mat[i][j] = 0;
+}
 
 
 // matrix addition
-Matrix operator +(Matrix a, Matrix b)
+Matrix operator +(const Matrix& A, const Matrix& B)
 {
-	Matrix c;
-	changeOrder(c, a.row, a.col);
-	if (a.row!=b.row || a.col!=b.col)
+	Matrix C;
+	changeOrder(C, A.row, A.col);
+	if (A.row!=B.row || A.col!=B.col)
 	{
 		cout <<"Matries incompatible for addition.\n";
-		return c;
+		return C;
 	}
-	for (int i=0; i<a.row; i++)
-		for (int j=0; j<a.col; j++)
-			c.mat[i][j]=a.mat[i][j]+b.mat[i][j];
-	return c;
+	for (int i=0; i<A.row; i++)
+		for (int j=0; j<A.col; j++)
+			C.mat[i][j] = A.mat[i][j]+B.mat[i][j];
+	return A;
 }
 
 // matrix subtraction
-Matrix operator -(Matrix A, Matrix B)
+Matrix operator -(const Matrix& A, const Matrix& B)
 {
 	Matrix C;
 	changeOrder(C, A.row, A.col);
@@ -56,10 +73,11 @@ Matrix operator -(Matrix A, Matrix B)
 }
 
 // matrix multiplication
-Matrix operator *(Matrix A, Matrix B)
+Matrix operator *(const Matrix& A, const Matrix& B)
 {
 	Matrix C;
 	changeOrder(C, A.row, B.col);
+	zeroMatrix(C);
 	if (A.col!=B.row)
 	{
 		cout <<"Matries incompatible for multiplication.\n";
@@ -75,13 +93,13 @@ Matrix operator *(Matrix A, Matrix B)
 }
 
 // unary +
-Matrix operator +(Matrix A)
+Matrix operator +(const Matrix& A)
 {
 	return A;
 }
 
 // unary -
-Matrix operator -(Matrix A)
+Matrix operator -(const Matrix& A)
 {
 	Matrix B;
 	changeOrder(B, A.row, A.col);
@@ -92,7 +110,7 @@ Matrix operator -(Matrix A)
 }
 
 // scalar multiplicaiton
-Matrix scalarMult(Matrix A, double x)
+Matrix scalarMult(const Matrix& A, double x)
 {
 	Matrix B;
 	changeOrder(B, A.row, A.col);
@@ -102,110 +120,96 @@ Matrix scalarMult(Matrix A, double x)
 	return B;
 }
 
-#define NMAX 100
-/* Function to perform the partial-pivoting Gaussian elimination.
-	 a[][] is the original matrix in the input and transformed
-	 matrix plus the pivoting element ratios below the diagonal
-	 in the output.	indx[] records the pivoting order.
- */
-void pivot (Matrix& a, int indx[])
+// matrix inversion guass jordan elimination using full pivoting
+void inv(Matrix& A)
 {
-	int i, j, k, itmp;
-	double c1, pi, pi1, pj;
-	double c[NMAX];
-	int n = a.row;
-
-	if (n > NMAX)
+	int n = A.row;
+	if (A.row != A.col)
 	{
-		cout <<"The matrix dimension is too large.\n";
-		exit(1);
+		cout <<"Maxtrix not square.\n";
+		return;
 	}
+	
+	int i, icol, irow, j, k, l, ll;
+	float big, dum, pivinv, temp;
+	int* indxc = new int[n];
+	int* indxr = new int[n]; 
+	int* ipiv = new int[n]; /* The integer arrays ipiv, indxr, and indxc are
+	used for bookkeeping on the pivoting. */
 
-	/* Initialize the index */	
-
-	for (i = 0; i < n; ++i)
-		indx[i] = i;
-
-	/* Find the rescaling factors, one from each row */
- 
-	for (i = 0; i < n; ++i)
-	{
-		c1 = 0;
-		for (j = 0; j < n; ++j)
-			if (fabs(a.mat[i][j]) > c1) 
-				c1 = fabs(a.mat[i][j]);
-		c[i] = c1;
-	}
-
-	/* Search the pivoting (largest) element from each column */ 
-
-	for (j = 0; j < n-1; ++j)
-	{
-		pi1 = 0;
-		for (i = j; i < n; ++i)
+	for (i=0; i<n; i++) 
+		ipiv[i]=-1;
+		
+	for (i=0; i<n; i++) 
+	{ 
+		// This is the main loop over the columns to be reduced.
+		big = 0.0; 
+		for (j=0; j<n; j++) // This is the outer loop of the search for a pivot element.
+			if (ipiv[j] != 0) 
+				for (k=0; k<n; k++)
+				{
+					if (ipiv[k] == -1)
+					{
+						if (fabs(A.mat[j][k]) >= big)
+						{
+							big = fabs(A.mat[j][k]);
+							irow = j;
+							icol = k;
+						}
+					} 
+					else if (ipiv[k] > 1) 
+					{
+						cout <<"Singular Matrix.\n";
+						return;
+					}
+				}
+		(ipiv[icol])++;
+		/* We now have the pivot element, so we interchange rows, if needed, to put the pivot
+		element on the diagonal. The columns are not physically interchanged, only relabeled:
+		indxc[i], the column of the ith pivot element, is the ith column that is reduced, while
+		indxr[i] is the row in which that pivot element was originally located. If indxr[i] 6=
+		indxc[i] there is an implied column interchange. With this form of bookkeeping, the
+		solution b's will end up in the correct order, and the inverse matrix will be scrambled
+		by columns. */
+		if (irow != icol)
 		{
-			pi = fabs(a.mat[indx[i]][j]) / c[indx[i]];
-			if (pi > pi1)
-			{
-				pi1 = pi;
-				k = i;
+			for (l=0; l<n; l++)
+				swap(A.mat[irow][l],A.mat[icol][l]);
+		}
+	
+		indxr[i] = irow; // We are now ready to divide the pivot row by the
+		indxc[i] = icol; // pivot element, located at irow and icol.
+		if (A.mat[icol][icol] == 0.0) 
+		{
+			cout <<"Singular Matrix.\n";
+			return;
+		}
+		pivinv = 1.0/A.mat[icol][icol];
+		A.mat[icol][icol]=1.0;
+		for (l=0; l<n; l++)
+			A.mat[icol][l] *= pivinv;
+
+		for (ll=0; ll<n; ll++) // Next, we reduce the rows...
+			if (ll != icol) //  ...except for the pivot one, of course.
+			{	
+				dum = A.mat[ll][icol];
+				A.mat[ll][icol] = 0.0;
+				for (l=0; l<n;l++) 
+					A.mat[ll][l] -= A.mat[icol][l]*dum;
 			}
-		}
-
-		/* Interchange the rows via indx[] to record pivoting order */
-
-		itmp = (int)indx[j];
-		indx[j] = indx[k];
-		indx[k] = itmp;
-		for (i = j+1; i < n; ++i)
-		{
-			pj = a.mat[indx[i]][j]/a.mat[indx[j]][j];
-
-			/* Record pivoting ratios below the diagonal */
-
-			a.mat[indx[i]][j] = pj;
-
-			/* Modify other elements accordingly */
-
-			for (k = j+1; k < n; ++k)
-				a.mat[indx[i]][k] = a.mat[indx[i]][k]-pj*a.mat[indx[j]][k];
-		}
 	}
-}
-
-/* Function to invert matrix a[][] with the inverse stored
-	 in x[][] in the output. */
-void inv(Matrix& a, Matrix& x, int indx[])
-{
-	int n = a.row;
-	int i,j,k;
-	double b[NMAX][NMAX];
-	x.row = x.col = a.row;
-
-	for (i = 0; i < n; ++i)
-		for (j = 0; j < n; ++j)
-			b[i][j] = 0;
-
-	for (i = 0; i < n; ++i)
-		b[i][i] = 1;
-
-	pivot(a, indx);
-
-	for (i = 0; i < n-1; ++i)
-		for (j = i+1; j < n; ++j)
-			for (k = 0; k < n; ++k)
-				b[indx[j]][k] = b[indx[j]][k]-a.mat[indx[j]][i]*b[indx[i]][k];
-
-
-	for (i = 0; i < n; ++i)
-		x.mat[n-1][i] = b[indx[n-1]][i]/a.mat[indx[n-1]][n-1];
-		for (j = n-2; j >= 0; j = j-1)
-		{
-			x.mat[j][i] = b[indx[j]][i];
-			for (k = j+1; k < n; ++k)
-				x.mat[j][i] = x.mat[j][i]-a.mat[indx[j]][k]*x.mat[k][i];
-			x.mat[j][i] = x.mat[j][i]/a.mat[indx[j]][j];
-		}
+	/* This is the end of the main loop over columns of the reduction. It only remains to unscramble
+	the solution in view of the column interchanges. We do this by interchanging pairs of
+	columns in the reverse order that the permutation was built up. */
+	for (l=n-1; l>=0; l--)
+	{
+		if (indxr[l] != indxc[l])
+			for (k=0;k<n;k++)
+				swap(A.mat[k][indxr[l]],A.mat[k][indxc[l]]);
+	} // And we are done.
+	delete[] indxc;
+	delete[] indxr;
+	delete[] ipiv;
 }
 
 
@@ -230,19 +234,25 @@ ostream& operator <<(ostream& s, Matrix& A)
 	return s;
 }
 
+#endif
+
+/*
 int main()
 {
 	Matrix A;
 	changeOrder(A, 3, 3);
 	A.mat[0][0] = 1; A.mat[0][1] = 3; A.mat[0][2] = 4;
 	A.mat[1][0] = 3; A.mat[1][1] = 2; A.mat[1][2] = 1;
-	A.mat[2][0] = 7; A.mat[2][1] = 8; A.mat[2][2] = 8;
+	A.mat[2][0] = 7; A.mat[2][1] = 8; A.mat[2][2] = 8;	
 	cout <<A;
 	Matrix B = A;
-	int indx[100];
-	inv(A, B, indx);
+	
+	inv(B);
 	cout <<endl <<B;
+	Matrix C;
+	C = A*B;
+	cout <<endl <<C;
 	cout <<endl <<B.row <<B.col;
 	getch();
 }
-	
+*/
