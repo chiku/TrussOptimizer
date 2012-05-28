@@ -190,7 +190,7 @@ void DE::findFitnessLast()
 // Main algorithm for evolution
 void DE::evolution()
 {
-	int i, j, k;
+	int j;
 	
 	Truss temp;
 	temp.getData();
@@ -203,7 +203,6 @@ void DE::evolution()
 
 		cout <<"Generation: " <<GENERATION <<"\tBest fit.: " <<best_fitness
 			<<"\tAvg. fit.: " <<avg_fitness <<endl;
-		int r1 = randomBetween(0, POPULATION);
 		int r2 = randomBetween(0, POPULATION);
 		int r3 = randomBetween(0, POPULATION);
 		int r4 = randomBetween(0, POPULATION);

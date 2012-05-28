@@ -58,11 +58,11 @@ class DE
 DE::DE()
 {
 	getData();
-	
+
 	xvector = new double[POPULATION+1];
 	yvector = new double[POPULATION+1];
 	fitness = new double[POPULATION+1];
-	
+
 	for (int i=0; i<POPULATION; i++)
 	{
 		xvector[i] = randomBetween(MIN_X, MAX_X);
@@ -84,14 +84,14 @@ void DE::getData()
 // Also finds the best and average fitness
 void DE::findFitness()
 {
-	int i, j;
+	int i;
 	for (i=0; i<POPULATION; i++)
 	{
 		double x=xvector[i], y=yvector[i];
 		fitness[i] = ( 4.0 - 2.1*x*x + x*x*x*x/3.0 )*x*x + x*y + ( -4.0 + 4*y*y)*y*y;
 	}
 	
-	best_fitness = fitness[0]; 
+	best_fitness = fitness[0];
 	best_fitness_loc = 0;
 	avg_fitness = fitness[0]; 
 	for (i=1; i<POPULATION; i++)
@@ -118,12 +118,12 @@ inline void DE::findFitnessLast()
 // Main algorithm for evolution
 void DE::evolution()
 {
-	int i, j, k;
 	int GENERATION = 0;
 	double temp_x, temp_y;
 	double F, CR;
-	
+
 	avg_fitness = 1e50; best_fitness = 1e49;
+
 	while (avg_fitness - best_fitness >= 0.000000001 && GENERATION < 10000)
 	{
 		GENERATION++;
@@ -155,7 +155,7 @@ void DE::evolution()
 			xvector[POPULATION] = xvector[r3];
 			yvector[POPULATION] = yvector[r3];
 		}
-		
+
 		// Recombination
 		findFitnessLast();
 		if (fitness[POPULATION] < fitness[r4])
@@ -177,6 +177,3 @@ int main()
 	de.evolution();
 	de.printResult();
 }
-
-
-

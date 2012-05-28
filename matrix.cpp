@@ -132,7 +132,7 @@ void inv(Matrix& A)
 	}
 	
 	int i, icol, irow, j, k, l, ll;
-	float big, dum, pivinv, temp;
+	float big, dum, pivinv;
 	int* indxc = new int[n];
 	int* indxr = new int[n]; 
 	int* ipiv = new int[n]; /* The integer arrays ipiv, indxr, and indxc are

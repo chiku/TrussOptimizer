@@ -95,7 +95,7 @@ void DE::getData()
 // Also finds the best and average fitness
 void DE::findFitness()
 {
-	int i, j;
+	int i;
 	for (i=0; i<POPULATION; i++)
 	{
 		double x1=x1vector[i], x2=x2vector[i], x3=x3vector[i];
@@ -151,7 +151,6 @@ inline void DE::findFitnessLast()
 // Main algorithm for evolution
 void DE::evolution()
 {
-	int i, j, k;
 	int GENERATION = 0;
 	double temp_x1, temp_x2, temp_x3;
 	double F, CR;
