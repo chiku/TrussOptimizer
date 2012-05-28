@@ -13,7 +13,7 @@ using namespace std;
 
 inline int randomBetween(int a, int b) // [a, b)
 {
-	return ( rand() * (b-a) /(RAND_MAX) + a);
+	return ( a + rand() % (b+1-a) );
 }
 
 inline double randomBetween(double a, double b) // [a, b)
@@ -126,6 +126,7 @@ void DE::evolution()
 
 	while (avg_fitness - best_fitness >= 0.000000001 && GENERATION < 10000)
 	{
+		findFitness();
 		GENERATION++;
 
 		cout <<"Gen.: " <<GENERATION <<"\tBest fit.: " <<best_fitness
@@ -162,8 +163,7 @@ void DE::evolution()
 		{
 			xvector[r4] = xvector[POPULATION];
 			yvector[r4] = yvector[POPULATION];
-			fitness[r4] = fitness[POPULATION];
-		}			
+		}
 	}
 }
 
