@@ -1,6 +1,6 @@
 To compile the program
 ```shell
-g++ main.cpp
+g++ main.cpp -o main
 ```
 
 To run the program
@@ -10,32 +10,13 @@ To run the program
 
 The following files are needed for TRUSS OPTIMIZATION
 
-<table>
-  <tr>
-    <th>File</th>
-    <th>Purpose</th>
-  </tr>
-  <tr>
-    <td>matrix.cpp</td>
-    <td>Implements matrix manipulations</td>
-  </tr>
-  <tr>
-    <td>truss.cpp</td>
-    <td>Truss solver</td>
-  </tr>
-  <tr>
-    <td>de.cpp</td>
-    <td>Differential Evolution</td>
-  </tr>
-  <tr>
-    <td>main.cpp</td>
-    <td>The main program</td>
-  </tr>
-  <tr>
-    <td>main.exe</td>
-    <td>The main EXECUTABLE file</td>
-  </tr>
-</table>
+|File|Purpose|
+|----|-------|
+|matrix.cpp|Implements matrix manipulations|
+|truss.cpp|Truss solver|
+|de.cpp|Differential Evolution|
+|main.cpp|The main program|
+|main|The main EXECUTABLE file|
 
 On executing main.exe, the two files are searched for
 
