@@ -8,19 +8,76 @@ using namespace std;
 
 const int MAX2 = 30;
 
+class Matrix;
+
+// matrix addition
+Matrix operator +(const Matrix& A, const Matrix& B);
+Matrix operator -(const Matrix& A, const Matrix& B);
+Matrix operator *(const Matrix& A, const Matrix& B);
+
+ostream& operator <<(ostream& s, Matrix& A);
+istream& operator >>(istream& s, Matrix& A);
+
+void zeroMatrix(Matrix& A);
 
 /* IMPLEMENTING MATRIX */
-struct Matrix
+class Matrix
 {
 	double mat[MAX2][MAX2];
-	int row, col;
+	long int row, col;
+
+public:
+	long int rows() { return row; };
+	long int columns() { return col; };
+
+    friend Matrix operator + (const Matrix& A, const Matrix& B);
+    friend Matrix operator - (const Matrix& A, const Matrix& B);
+    friend Matrix operator * (const Matrix& A, const Matrix& B);
+
+    friend ostream& operator <<(ostream& s, Matrix& A);
+    friend istream& operator >>(istream& s, Matrix& A);
+
+    friend void zeroMatrix(Matrix& A);
+
+    Matrix operator + () const;
+    Matrix operator - () const;
+    Matrix scalarMult(double c);
+
+    double& operator()(long int r, long int c);
+    double operator()(long int r, long int c) const;
+
+	void mutateToInclude(double value, long int r, long int c);
+	void setSize(long int r, long int c);
+
+	Matrix invert();
 };
+
+inline double Matrix::operator() (long int r, long int c) const
+{
+	return mat[r][c];
+}
+
+inline double& Matrix::operator() (long int r, long int c)
+{
+	return mat[r][c];
+}
+
+inline void Matrix::mutateToInclude(double value, long int r, long int c)
+{
+	mat[r][c] = value;
+	setSize(max(row, r), max(col, c));
+}
+
+inline void Matrix::setSize(long int r, long int c)
+{
+	row = r;
+	col = c;
+}
 
 // changes order of matrix
 inline void changeOrder(Matrix& A, int r, int c)
 {
-	A.row = r;
-	A.col = c;
+	A.setSize(r, c);
 }
 
 // Make all elements of the matrix 0
@@ -85,41 +142,41 @@ Matrix operator *(const Matrix& A, const Matrix& B)
 }
 
 // unary +
-Matrix operator +(const Matrix& A)
+Matrix Matrix::operator +() const
 {
-	return A;
+	return (*this);
 }
 
 // unary -
-Matrix operator -(const Matrix& A)
+Matrix Matrix::operator -() const
 {
 	Matrix B;
-	changeOrder(B, A.row, A.col);
-	for (int i=0; i<A.row; i++)
-		for (int j=0; j<A.col; j++)
-			B.mat[i][j] = -A.mat[i][j];
+	changeOrder(B, row, col);
+	for (int i=0; i<row; i++)
+		for (int j=0; j<col; j++)
+			B.mat[i][j] = -mat[i][j];
 	return B;
 }
 
 // scalar multiplicaiton
-Matrix scalarMult(const Matrix& A, double x)
+Matrix Matrix::scalarMult(double x)
 {
 	Matrix B;
-	changeOrder(B, A.row, A.col);
-	for (int i=0; i<A.row; i++)
-		for (int j=0; j<A.col; j++)
-			B.mat[i][j] = x*A.mat[i][j];
+	changeOrder(B, row, col);
+	for (int i=0; i<row; i++)
+		for (int j=0; j<col; j++)
+			B.mat[i][j] = x*mat[i][j];
 	return B;
 }
 
 // matrix inversion guass jordan elimination using full pivoting
-void inv(Matrix& A)
+Matrix Matrix::invert()
 {
-	int n = A.row;
-	if (A.row != A.col)
+	int n = row;
+	if (row != col)
 	{
-		cout <<"Matrix not square.(" <<A.row <<", " <<A.col <<")\n";
-		return;
+		cout <<"Matrix not square.(" <<row <<", " <<col <<")\n";
+		return (*this);
 	}
 	
 	int i, icol, irow, j, k, l, ll;
@@ -142,9 +199,9 @@ void inv(Matrix& A)
 				{
 					if (ipiv[k] == -1)
 					{
-						if (fabs(A.mat[j][k]) >= big)
+						if (fabs(mat[j][k]) >= big)
 						{
-							big = fabs(A.mat[j][k]);
+							big = fabs(mat[j][k]);
 							irow = j;
 							icol = k;
 						}
@@ -152,7 +209,7 @@ void inv(Matrix& A)
 					else if (ipiv[k] > 1) 
 					{
 						cout <<"Singular Matrix.\n";
-						return;
+						return (*this);
 					}
 				}
 		(ipiv[icol])++;
@@ -166,28 +223,28 @@ void inv(Matrix& A)
 		if (irow != icol)
 		{
 			for (l=0; l<n; l++)
-				swap(A.mat[irow][l],A.mat[icol][l]);
+				swap(mat[irow][l],mat[icol][l]);
 		}
 	
 		indxr[i] = irow; // We are now ready to divide the pivot row by the
 		indxc[i] = icol; // pivot element, located at irow and icol.
-		if (A.mat[icol][icol] == 0.0) 
+		if (mat[icol][icol] == 0.0) 
 		{
 			cout <<"Singular Matrix.\n";
-			return;
+			return (*this);
 		}
-		pivinv = 1.0/A.mat[icol][icol];
-		A.mat[icol][icol]=1.0;
+		pivinv = 1.0/mat[icol][icol];
+		mat[icol][icol]=1.0;
 		for (l=0; l<n; l++)
-			A.mat[icol][l] *= pivinv;
+			mat[icol][l] *= pivinv;
 
 		for (ll=0; ll<n; ll++) // Next, we reduce the rows...
 			if (ll != icol) //  ...except for the pivot one, of course.
 			{	
-				dum = A.mat[ll][icol];
-				A.mat[ll][icol] = 0.0;
+				dum = mat[ll][icol];
+				mat[ll][icol] = 0.0;
 				for (l=0; l<n;l++) 
-					A.mat[ll][l] -= A.mat[icol][l]*dum;
+					mat[ll][l] -= mat[icol][l]*dum;
 			}
 	}
 	/* This is the end of the main loop over columns of the reduction. It only remains to unscramble
@@ -197,11 +254,13 @@ void inv(Matrix& A)
 	{
 		if (indxr[l] != indxc[l])
 			for (k=0;k<n;k++)
-				swap(A.mat[k][indxr[l]],A.mat[k][indxc[l]]);
+				swap(mat[k][indxr[l]],mat[k][indxc[l]]);
 	} // And we are done.
 	delete[] indxc;
 	delete[] indxr;
 	delete[] ipiv;
+
+	return (*this);
 }
 
 
@@ -233,18 +292,17 @@ int main()
 {
 	Matrix A;
 	changeOrder(A, 3, 3);
-	A.mat[0][0] = 1; A.mat[0][1] = 3; A.mat[0][2] = 4;
-	A.mat[1][0] = 3; A.mat[1][1] = 2; A.mat[1][2] = 1;
-	A.mat[2][0] = 7; A.mat[2][1] = 8; A.mat[2][2] = 8;	
+	A(0, 0) = 1; A(0, 1) = 3; A(0, 2) = 4;
+	A(1, 0) = 3; A(1, 1) = 2; A(1, 2) = 1;
+	A(2, 0) = 7; A(2, 1) = 8; A(2, 2) = 8;
 	cout <<A;
 	Matrix B = A;
 	
-	inv(B);
+	B.invert();
 	cout <<endl <<B;
 	Matrix C;
 	C = A*B;
 	cout <<endl <<C;
-	cout <<endl <<B.row <<B.col;
+	cout <<endl <<B.rows() <<B.columns();
 }
 */
-

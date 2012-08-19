@@ -54,13 +54,13 @@ class DE
 			cout <<"\n\nThe stress in members are\n";
 			for (i=0; i<T[0].members(); i++)
 			{
-				double t =  T[best_fitness_loc].locforce[i].mat[0][0] * T[best_fitness_loc].locforce[i].mat[0][0] + 
-							T[best_fitness_loc].locforce[i].mat[1][0] * T[best_fitness_loc].locforce[i].mat[1][0];
+				double t =  T[best_fitness_loc].locforce[i](0, 0) * T[best_fitness_loc].locforce[i](0, 0) + 
+							T[best_fitness_loc].locforce[i](1, 0) * T[best_fitness_loc].locforce[i](1, 0);
 				cout <<"\t" <<i <<">  " <<sqrt(t)/T[best_fitness_loc].area[i] <<endl;
 			}		
 			cout <<"\n\nThe nodal displacements are\n";
-			for (i=0; i<T[0].uglobal.row; i++)
-				cout <<"\t" <<i <<"> " <<T[best_fitness_loc].uglobal.mat[i][0] <<endl;
+			for (i=0; i<T[0].uglobal.rows(); i++)
+				cout <<"\t" <<i <<"> " <<T[best_fitness_loc].uglobal(i, 0) <<endl;
 			cout <<"\n\nThe member area are\n";
 			for (i=0; i<T[0].members(); i++)
 				cout <<"Member no "<< i <<" " <<T[best_fitness_loc].area[i] <<endl;
@@ -130,15 +130,15 @@ void DE::findFitness()
 			{
 				fitness[i] += T[i].area[j]*T[i].length[j];
 				// stress penalty
-				double t = sqrt( T[i].locforce[j].mat[0][0]*T[i].locforce[j].mat[0][0] + 
-					T[i].locforce[j].mat[1][0]*T[i].locforce[j].mat[1][0] );
+				double t = sqrt( T[i].locforce[j](0, 0)*T[i].locforce[j](0, 0) + 
+					T[i].locforce[j](1, 0)*T[i].locforce[j](1, 0) );
 				if ( fabs(t / T[i].area[j]) >= MAX_STRESS)
 					fitness[i] += PENALTY;
 			}
 	
 			// displacement penalty		
-			for (j=0; j<T[0].uglobal.row; j++)
-				if ( fabs(T[i].uglobal.mat[j][0]) >= MAX_DISP )
+			for (j=0; j<T[0].uglobal.rows(); j++)
+				if ( fabs(T[i].uglobal(j, 0)) >= MAX_DISP )
 					fitness[i] += PENALTY;
 		}
 	}
@@ -173,15 +173,15 @@ void DE::findFitnessLast()
 	{
 		fitness[i] += T[i].area[j]*T[i].length[j];
 		// stress penalty
-		double t = sqrt( T[i].locforce[j].mat[0][0]*T[i].locforce[j].mat[0][0] + 
-			T[i].locforce[j].mat[1][0]*T[i].locforce[j].mat[1][0] );
+		double t = sqrt( T[i].locforce[j](0, 0)*T[i].locforce[j](0, 0) + 
+			T[i].locforce[j](1, 0)*T[i].locforce[j](1, 0) );
 
 		if ( fabs(t / T[i].area[j]) >= MAX_STRESS)
 			fitness[i] += PENALTY;
 	}
 	// displacement penalty		
-	for (j=0; j<T[i].uglobal.row; j++)
-		if ( fabs(T[i].uglobal.mat[j][0]) >= MAX_DISP)
+	for (j=0; j<T[i].uglobal.rows(); j++)
+		if ( fabs(T[i].uglobal(j, 0)) >= MAX_DISP)
 			fitness[i] += PENALTY;
 }
 
