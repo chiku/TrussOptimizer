@@ -255,7 +255,7 @@ void Truss::condense()
 	for (i=0; i<2*total_nodes; i++)
 		if (knowledgeu[i]=='n')
 		{
-			uknown.mat[count_uunknown][0]=displacement.mat[i][0];
+			uunknown.mat[count_uunknown][0]=displacement.mat[i][0];
 			for (j=0; j<2*total_nodes; j++)
 				kglobalcond.mat[j][count_uknown+count_uunknown]=temp.mat[j][i];
 			count_uunknown++;
