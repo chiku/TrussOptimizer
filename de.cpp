@@ -169,7 +169,7 @@ void DE::findFitnessLast()
 	total_evals++;
 	
 	fitness[i] = 0;
-	for (j=0; j<=T[i].members(); j++)
+	for (j=0; j<T[i].members(); j++)
 	{
 		fitness[i] += T[i].area[j]*T[i].length[j];
 		// stress penalty
