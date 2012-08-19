@@ -171,7 +171,7 @@ void Truss::findKLocal()
 						klocal[total_members](3, 2) = klocal[total_members](2, 3) = Cx*Cy/len;
 				klocal[total_members](3, 0) = klocal[total_members](0, 3)=
 						klocal[total_members](1, 2) = klocal[total_members](2, 1)= -Cx*Cy/len;
-				klocal[total_members] = klocal[total_members].scalarMult(E*area[total_members]);
+				klocal[total_members] = klocal[total_members].scale(E*area[total_members]);
 				total_members++;
 			}
 }
@@ -180,7 +180,7 @@ void Truss::findKLocal()
 void Truss::findKGlobal()
 {
 	int i, j, mem_no=0;
- 	zeroMatrix(kglobal);
+	kglobal.fillWithZeros();
 	for (i=0; i<total_nodes-1; i++)
 		for (j=i; j<total_nodes; j++)
 	 	if ( (connectivity[i][j] == 'Y' || connectivity[i][j] == 'y') && i!=j)
@@ -260,11 +260,6 @@ void Truss::condense()
 			count_uunknown++;
 		}
 
-	Fknown.setSize(count_fknown, 1);
-	Funknown.setSize(count_funknown, 1);
-	uknown.setSize(count_uknown, 1);
-	uunknown.setSize(count_uunknown, 1);
-
 	k11.setSize(count_fknown, count_uknown);
 	k12.setSize(count_fknown, count_uunknown);
 	k21.setSize(count_funknown, count_uknown);
@@ -292,7 +287,7 @@ void Truss::condense()
 
 void Truss::solve()
 {
-	Matrix k12inv; k12inv = k12; k12inv.invert();
+	Matrix k12inv = k12.invert();
 	uunknown = k12inv * (Fknown - k11*uknown);
 	Funknown = k21*uknown + k22*uunknown;
 
