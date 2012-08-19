@@ -39,6 +39,8 @@ public:
 
     friend void zeroMatrix(Matrix& A);
 
+    Matrix() { row = 0; col = 0; }
+    Matrix(long int r, long int c) { row = r; col = c; }
     Matrix operator + () const;
     Matrix operator - () const;
     Matrix scalarMult(double c);
@@ -65,19 +67,13 @@ inline double& Matrix::operator() (long int r, long int c)
 inline void Matrix::mutateToInclude(double value, long int r, long int c)
 {
 	mat[r][c] = value;
-	setSize(max(row, r), max(col, c));
+	setSize(max(row, r+1), max(col, c+1));
 }
 
 inline void Matrix::setSize(long int r, long int c)
 {
 	row = r;
 	col = c;
-}
-
-// changes order of matrix
-inline void changeOrder(Matrix& A, int r, int c)
-{
-	A.setSize(r, c);
 }
 
 // Make all elements of the matrix 0
@@ -93,7 +89,7 @@ inline void zeroMatrix(Matrix& A)
 Matrix operator +(const Matrix& A, const Matrix& B)
 {
 	Matrix C;
-	changeOrder(C, A.row, A.col);
+	C.setSize(A.row, A.col);
 	if (A.row!=B.row || A.col!=B.col)
 	{
 		cout <<"Matries incompatible for addition. (" <<A.row <<", " <<A.col <<") and ("<< B.row <<", " <<B.col <<")\n";
@@ -109,7 +105,7 @@ Matrix operator +(const Matrix& A, const Matrix& B)
 Matrix operator -(const Matrix& A, const Matrix& B)
 {
 	Matrix C;
-	changeOrder(C, A.row, A.col);
+	C.setSize(A.row, A.col);
 	if (A.row!=B.row || A.col!=B.col)
 	{
 		cout <<"Matries incompatible for subtraction. (" <<A.row <<", " <<A.col <<") and ("<< B.row <<", " <<B.col <<")\n";
@@ -125,7 +121,7 @@ Matrix operator -(const Matrix& A, const Matrix& B)
 Matrix operator *(const Matrix& A, const Matrix& B)
 {
 	Matrix C;
-	changeOrder(C, A.row, B.col);
+	C.setSize(A.row, B.col);
 	zeroMatrix(C);
 	if (A.col!=B.row)
 	{
@@ -151,7 +147,7 @@ Matrix Matrix::operator +() const
 Matrix Matrix::operator -() const
 {
 	Matrix B;
-	changeOrder(B, row, col);
+	B.setSize(row, col);
 	for (int i=0; i<row; i++)
 		for (int j=0; j<col; j++)
 			B.mat[i][j] = -mat[i][j];
@@ -162,7 +158,7 @@ Matrix Matrix::operator -() const
 Matrix Matrix::scalarMult(double x)
 {
 	Matrix B;
-	changeOrder(B, row, col);
+	B.setSize(row, col);
 	for (int i=0; i<row; i++)
 		for (int j=0; j<col; j++)
 			B.mat[i][j] = x*mat[i][j];
@@ -291,7 +287,7 @@ ostream& operator <<(ostream& s, Matrix& A)
 int main()
 {
 	Matrix A;
-	changeOrder(A, 3, 3);
+	A.setSize(3, 3);
 	A(0, 0) = 1; A(0, 1) = 3; A(0, 2) = 4;
 	A(1, 0) = 3; A(1, 1) = 2; A(1, 2) = 1;
 	A(2, 0) = 7; A(2, 1) = 8; A(2, 2) = 8;

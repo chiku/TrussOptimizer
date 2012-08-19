@@ -78,9 +78,9 @@ void Truss::getData()
 	// the number of nodes
 	F >>total_nodes;
 
-	changeOrder(kglobal, 2*total_nodes, 2*total_nodes);
-	changeOrder(force, 2*total_nodes, 1);
-	changeOrder(displacement, 2*total_nodes, 1);
+	kglobal.setSize(2*total_nodes, 2*total_nodes);
+	force.setSize(2*total_nodes, 1);
+	displacement.setSize(2*total_nodes, 1);
 
 	for (i=0; i<2*total_nodes; i++)
 		for (j=9; j<2*total_nodes; j++)
@@ -162,7 +162,7 @@ void Truss::findKLocal()
 				Cx = (N[j].x-N[i].x) / len;
 				Cy = (N[j].y-N[i].y) / len;
 
-				changeOrder(klocal[total_members], 4, 4);
+				klocal[total_members].setSize(4, 4);
 				klocal[total_members](0, 0) = klocal[total_members](2, 2) = Cx*Cx/len;
 				klocal[total_members](1, 1) = klocal[total_members](3, 3) = Cy*Cy/len;
 				klocal[total_members](0, 2) = klocal[total_members](2, 0) = -Cx*Cx/len;
@@ -215,9 +215,8 @@ void Truss::condense()
 {
 	int i, j;
 	int count_fknown=0, count_funknown=0, count_uknown=0, count_uunknown=0;
-	Matrix temp;	 // holds the force condensation
-	changeOrder(temp, total_nodes*2, total_nodes*2);
-	changeOrder(kglobalcond, total_nodes*2, total_nodes*2);
+	Matrix temp(total_nodes*2, total_nodes*2);	 // holds the force condensation
+	kglobalcond.setSize(total_nodes*2, total_nodes*2);
 
 	// condensing for forces
 	// known forces at top
@@ -261,15 +260,15 @@ void Truss::condense()
 			count_uunknown++;
 		}
 
-	changeOrder(Fknown, count_fknown, 1);
-	changeOrder(Funknown, count_funknown, 1);
-	changeOrder(uknown, count_uknown, 1);
-	changeOrder(uunknown, count_uunknown, 1);
+	Fknown.setSize(count_fknown, 1);
+	Funknown.setSize(count_funknown, 1);
+	uknown.setSize(count_uknown, 1);
+	uunknown.setSize(count_uunknown, 1);
 
-	changeOrder(k11, count_fknown, count_uknown);
-	changeOrder(k12, count_fknown, count_uunknown);
-	changeOrder(k21, count_funknown, count_uknown);
-	changeOrder(k22, count_funknown, count_uunknown);
+	k11.setSize(count_fknown, count_uknown);
+	k12.setSize(count_fknown, count_uunknown);
+	k21.setSize(count_funknown, count_uknown);
+	k22.setSize(count_funknown, count_uunknown);
 
 	// create the matrices K11, K12, K21 and K22
 	// f known, u known
@@ -299,8 +298,8 @@ void Truss::solve()
 
 	int i, j;
 	Matrix ulocal;
-	changeOrder(uglobal, 2*total_nodes, 1);
-	changeOrder(ulocal, 4, 1);
+	uglobal.setSize(2*total_nodes, 1);
+	ulocal.setSize(4, 1);
 
 	// find global displacement matrix
 	int a=0, b=0;
