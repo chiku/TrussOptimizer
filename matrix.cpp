@@ -8,15 +8,6 @@ using namespace std;
 
 const int MAX2 = 30;
 
-// to swap any two elements
-template <class T> void SWAP(T &a, T &b)
-{
-	T temp;
-	temp = a;
-	a = b;
-	b = temp;
-}
-	
 
 /* IMPLEMENTING MATRIX */
 struct Matrix
