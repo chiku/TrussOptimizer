@@ -224,9 +224,9 @@ void Truss::condense()
 	for (i=0; i<2*total_nodes; i++)
 		if (knowledgeF[i]=='y')
 		{
-			Fknown(count_fknown, 0)=force(i, 0);
+			Fknown.mutateToInclude(force(i, 0), count_fknown, 0);
 			for (j=0; j<2*total_nodes; j++)
-				temp(count_fknown, j)=kglobal(i, j);
+				temp.mutateToInclude(kglobal(i, j), count_fknown, j);
 			count_fknown++;
 		}
 
@@ -234,9 +234,9 @@ void Truss::condense()
 	for (i=0; i<2*total_nodes; i++)
 		if (knowledgeF[i]=='n')
 		{
-			Funknown(count_funknown, 0)=force(i, 0);
+			Funknown.mutateToInclude(force(i, 0), count_funknown, 0);
 			for (j=0; j<2*total_nodes; j++)
-				temp(count_fknown+count_funknown, j)=kglobal(i, j);
+				temp.mutateToInclude(kglobal(i, j), count_fknown+count_funknown, j);
 			count_funknown++;
 		}
 
@@ -245,9 +245,9 @@ void Truss::condense()
 	for (i=0; i<2*total_nodes; i++)
 		if (knowledgeu[i]=='y')
 		{
-			uknown(count_uknown, 0)=displacement(i, 0);
+			uknown.mutateToInclude(displacement(i, 0), count_uknown, 0);
 			for (j=0; j<2*total_nodes; j++)
-				kglobalcond(j, count_uknown)=temp(j, i);
+				kglobalcond.mutateToInclude(temp(j, i), j, count_uknown);
 			count_uknown++;
 		}
 		
@@ -255,9 +255,9 @@ void Truss::condense()
 	for (i=0; i<2*total_nodes; i++)
 		if (knowledgeu[i]=='n')
 		{
-			uunknown(count_uunknown, 0)=displacement(i, 0);
+			uunknown.mutateToInclude(displacement(i, 0), count_uunknown, 0);
 			for (j=0; j<2*total_nodes; j++)
-				kglobalcond(j, count_uknown+count_uunknown)=temp(j, i);
+				kglobalcond.mutateToInclude(temp(j, i), j, count_uknown+count_uunknown);
 			count_uunknown++;
 		}
 
@@ -265,6 +265,11 @@ void Truss::condense()
 	changeOrder(Funknown, count_funknown, 1);
 	changeOrder(uknown, count_uknown, 1);
 	changeOrder(uunknown, count_uunknown, 1);
+
+	changeOrder(k11, count_fknown, count_uknown);
+	changeOrder(k12, count_fknown, count_uunknown);
+	changeOrder(k21, count_funknown, count_uknown);
+	changeOrder(k22, count_funknown, count_uunknown);
 
 	// create the matrices K11, K12, K21 and K22
 	// f known, u known
@@ -283,11 +288,6 @@ void Truss::condense()
 	for (i=0; i<count_funknown; i++)
 		for (j=0; j<count_uunknown; j++)
 			k22(i, j) = kglobalcond(count_fknown+i, count_uknown+j);
-			
-	changeOrder(k11, count_fknown, count_uknown);
-	changeOrder(k12, count_fknown, count_uunknown);
-	changeOrder(k21, count_funknown, count_uknown);
-	changeOrder(k22, count_funknown, count_uunknown);
 }
 
 
@@ -325,7 +325,6 @@ void Truss::solve()
 
 				locforce[a] = klocal[a]*ulocal;
 				a++;
-				changeOrder(locforce[a], 4, 1);
 		 	}
 }
 
