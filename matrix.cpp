@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 
-#include "cmatrix/src/matrix.h"
+#include "cmatrix/matrix/matrix.h"
 
 using namespace std;
 
