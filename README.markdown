@@ -1,12 +1,28 @@
-To compile the program
+Fetch source code
+-----------------
+
 ```shell
+git clone https://github.com/chiku/TrussSolver.git
+cd TrussSolver
+git submodule update --init
+```
+
+Compile
+-------
+
+```shell 
 g++ main.cpp -o main
 ```
 
-To run the program
+Execute
+-------
+
 ```shell
-./a.out
+./main
 ```
+
+Details
+-------
 
 The following files are needed for TRUSS OPTIMIZATION
 
@@ -57,9 +73,9 @@ Format for truss.dat
 ```
 
 Notes
---------
+-----
 
-* Each node must either have force B.C.s or displacement B.C.s
+* Each node must either have force B.C.s or displacement B.C.s (B.C. stands boundary condition)
 * The members are numbered on the basis of nodes
-   (e.g. member 1 connects nodes 1, 2 & member 2 connects nodes 1 & 3, & so on..)
+   (e.g. member 1 connects nodes 1, 2 & member 2 connects nodes 1 & 3, & so on)
 * Since DE is an evolution based algo, each run is likely to give different answers.
