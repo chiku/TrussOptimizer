@@ -34,20 +34,16 @@ The following files are needed for TRUSS OPTIMIZATION
 |main.cpp|The main program|
 |main|The main EXECUTABLE file|
 
-On executing main.exe, the two files are searched for
+On executing main, these two files are searched for
 
-<table>
-  <tr>
-    <td>de.dat</td>
-    <td>Stores some DE parameters</td>
-  </tr>
-  <tr>
-    <td>truss.dat</td>
-    <td>Stores the truss structure</td>
-  </tr>
-</table>
+|Name|Purpose|
+|----|-------|
+|de.dat|Stores some DE parameters|
+|truss.dat|Stores the truss structure|
+
 
 Format for de.dat
+
 
 ```text
 <lower limit for members> <upper limits for members>
