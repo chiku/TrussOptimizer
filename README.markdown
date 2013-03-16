@@ -50,6 +50,8 @@ On executing main, these two files are searched for
 <lower limit for CR> <upper limit for CR>
 ```
 
+[A sample **de.dat** is available here](https://raw.github.com/chiku/TrussSolver/master/de.dat).
+
 ### Format for truss.dat
 
 ```text
@@ -63,6 +65,8 @@ On executing main, these two files are searched for
 	<is node i connected to node j(y/n)> <area if y>
 <Youngs modulus>
 ```
+
+[A sample **truss.dat** is available here](https://raw.github.com/chiku/TrussSolver/master/truss.dat).
 
 ## Notes
 
