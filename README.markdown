@@ -1,5 +1,4 @@
-Fetch source code
------------------
+## Fetch source code
 
 ```shell
 git clone https://github.com/chiku/TrussSolver.git
@@ -7,22 +6,20 @@ cd TrussSolver
 git submodule update --init
 ```
 
-Compile
--------
+## Compile
 
 ```shell 
 g++ main.cpp -o main
 ```
 
-Execute
--------
+## Execute
 
 ```shell
 ./main
 ```
 
-Details
--------
+## Details
+
 
 The following files are needed for TRUSS OPTIMIZATION
 
@@ -42,8 +39,7 @@ On executing main, these two files are searched for
 |truss.dat|Stores the truss structure|
 
 
-Format for de.dat
-
+### Format for de.dat
 
 ```text
 <lower limit for members> <upper limits for members>
@@ -54,7 +50,7 @@ Format for de.dat
 <lower limit for CR> <upper limit for CR>
 ```
 
-Format for truss.dat
+### Format for truss.dat
 
 ```text
 <total nodes>
@@ -68,8 +64,7 @@ Format for truss.dat
 <Youngs modulus>
 ```
 
-Notes
------
+## Notes
 
 * Each node must either have force B.C.s or displacement B.C.s (B.C. stands boundary condition)
 * The members are numbered on the basis of nodes
