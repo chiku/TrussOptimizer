@@ -8,8 +8,8 @@ git submodule update --init
 
 ## Compile
 
-```shell 
-g++ main.cpp -o main
+```shell
+make
 ```
 
 ## Execute
@@ -44,7 +44,7 @@ On executing main, these two files are searched for
 ```text
 <lower limit for members> <upper limits for members>
 <permissible stress> <permissible displacements in both x, y directions>
-<constant penalty> 
+<constant penalty>
 <Population size>
 <lower limit for F> <upper limit for F>
 <lower limit for CR> <upper limit for CR>

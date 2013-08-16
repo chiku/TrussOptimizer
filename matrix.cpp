@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 
-#include "cmatrix/matrix/matrix.h"
+#include "matrix/matrix.h"
 
 using namespace std;
 
@@ -22,7 +22,7 @@ int main()
 	A(2, 0) = 7; A(2, 1) = 8; A(2, 2) = 8;
 	cout <<A;
 	Matrix B = A;
-	
+
 	B.invert();
 	cout <<endl <<B;
 	Matrix C;
