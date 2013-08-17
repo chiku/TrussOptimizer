@@ -4,7 +4,8 @@
 #include <fstream>
 #include <cmath>
 #include <cstdlib>
-#include "truss.cpp"
+
+#include "vendor/truss/include/truss.h"
 
 #ifndef __DE_H__
 #define __DE_H__
@@ -32,7 +33,7 @@ class DE
 		double avg_fitness, best_fitness;
 		int best_fitness_loc;
 		int total_evals; // total truss evaluations required in the whole process
-		
+
 		double MIN_AREA, MAX_AREA;  // geometric constraints
 		double MAX_STRESS, MAX_DISP; // behaviour constraints
 		int POPULATION;  // DE parameter
@@ -41,7 +42,7 @@ class DE
 
 	protected:
 		void findFitness();
-		void findFitnessLast();		
+		void findFitnessLast();
 
 	public:
 		DE();
@@ -54,17 +55,17 @@ class DE
 			cout <<"\n\nThe stress in members are\n";
 			for (i=0; i<T[0].members(); i++)
 			{
-				double t =  T[best_fitness_loc].locforce[i](0, 0) * T[best_fitness_loc].locforce[i](0, 0) + 
+				double t =  T[best_fitness_loc].locforce[i](0, 0) * T[best_fitness_loc].locforce[i](0, 0) +
 							T[best_fitness_loc].locforce[i](1, 0) * T[best_fitness_loc].locforce[i](1, 0);
 				cout <<"\t" <<i <<">  " <<sqrt(t)/T[best_fitness_loc].area[i] <<endl;
-			}		
+			}
 			cout <<"\n\nThe nodal displacements are\n";
 			for (i=0; i<T[0].uglobal.rows(); i++)
 				cout <<"\t" <<i <<"> " <<T[best_fitness_loc].uglobal(i, 0) <<endl;
 			cout <<"\n\nThe member area are\n";
 			for (i=0; i<T[0].members(); i++)
 				cout <<"Member no "<< i <<" " <<T[best_fitness_loc].area[i] <<endl;
-				
+
 			cout <<"\n\nTotal truss evaluations performed: " <<total_evals <<endl;
 		}
 };
@@ -73,7 +74,7 @@ class DE
 DE::DE()
 {
 	getData();
-	
+
 	T = new Truss[POPULATION+1];
 	fitness = new double[POPULATION+1];
 	change = new bool[POPULATION+1];
@@ -100,7 +101,7 @@ DE::~DE()
 // Get the DE parameters
 void DE::getData()
 {
-	ifstream File("de.dat");
+	ifstream File("data/de.dat");
 	File >>MIN_AREA >>MAX_AREA;
 	File >>MAX_STRESS >>MAX_DISP;
 	File >>PENALTY;
@@ -118,9 +119,9 @@ void DE::findFitness()
 		// Solve and obtain the forces in the members
 		if (change[i] == true)
 		{
-			T[i].findKLocal(); 
-			T[i].findKGlobal(); 
-			T[i].condense(); 
+			T[i].findKLocal();
+			T[i].findKGlobal();
+			T[i].condense();
 			T[i].solve();
 			total_evals++;
 			change[i] = false;
@@ -130,22 +131,22 @@ void DE::findFitness()
 			{
 				fitness[i] += T[i].area[j]*T[i].length[j];
 				// stress penalty
-				double t = sqrt( T[i].locforce[j](0, 0)*T[i].locforce[j](0, 0) + 
+				double t = sqrt( T[i].locforce[j](0, 0)*T[i].locforce[j](0, 0) +
 					T[i].locforce[j](1, 0)*T[i].locforce[j](1, 0) );
 				if ( fabs(t / T[i].area[j]) >= MAX_STRESS)
 					fitness[i] += PENALTY;
 			}
-	
-			// displacement penalty		
+
+			// displacement penalty
 			for (j=0; j<T[0].uglobal.rows(); j++)
 				if ( fabs(T[i].uglobal(j, 0)) >= MAX_DISP )
 					fitness[i] += PENALTY;
 		}
 	}
-	
-	best_fitness = fitness[0]; 
+
+	best_fitness = fitness[0];
 	best_fitness_loc = 0;
-	avg_fitness = 0; 
+	avg_fitness = 0;
 	for (i=0; i<POPULATION; i++)
 	{
 		if (fitness[i] < fitness[best_fitness_loc])
@@ -157,8 +158,8 @@ void DE::findFitness()
 	}
 	avg_fitness /= POPULATION;
 }
-	
-	
+
+
 // fitness of the last member which is actually vtrial
 void DE::findFitnessLast()
 {
@@ -167,19 +168,19 @@ void DE::findFitnessLast()
 	// Solve and obtain the forces in the members
 	T[i].findKLocal(); T[i].findKGlobal(); T[i].condense(); T[i].solve();
 	total_evals++;
-	
+
 	fitness[i] = 0;
 	for (j=0; j<T[i].members(); j++)
 	{
 		fitness[i] += T[i].area[j]*T[i].length[j];
 		// stress penalty
-		double t = sqrt( T[i].locforce[j](0, 0)*T[i].locforce[j](0, 0) + 
+		double t = sqrt( T[i].locforce[j](0, 0)*T[i].locforce[j](0, 0) +
 			T[i].locforce[j](1, 0)*T[i].locforce[j](1, 0) );
 
 		if ( fabs(t / T[i].area[j]) >= MAX_STRESS)
 			fitness[i] += PENALTY;
 	}
-	// displacement penalty		
+	// displacement penalty
 	for (j=0; j<T[i].uglobal.rows(); j++)
 		if ( fabs(T[i].uglobal(j, 0)) >= MAX_DISP)
 			fitness[i] += PENALTY;
@@ -191,7 +192,7 @@ void DE::findFitnessLast()
 void DE::evolution()
 {
 	int j;
-	
+
 	Truss temp;
 	temp.getData();
 	long int GENERATION = 0;
@@ -208,7 +209,7 @@ void DE::evolution()
 		int r4 = randomBetween(0, POPULATION);
 		int r5 = randomBetween(0, POPULATION);
 
-		// Differential mutation		
+		// Differential mutation
 		for (j=0; j<=T[0].members(); j++)
 		{
 			double F = randomBetween(F_MIN, F_MAX);
@@ -227,7 +228,7 @@ void DE::evolution()
 				T[POPULATION].area[j] = T[r4].area[j];
 		}
 
-		
+
 		// Recombination
 		findFitnessLast();
 		if (fitness[POPULATION] < fitness[r5])
@@ -246,7 +247,7 @@ int main()
 {
 	cout.precision(5);
 	for (int i=0; i<10000; i++)
-		cout <<randomBetween(1, 10) <<endl;	
+		cout <<randomBetween(1, 10) <<endl;
 }
 */
 

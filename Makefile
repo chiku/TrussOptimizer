@@ -9,8 +9,12 @@ SOURCE_INCLUDE_PATHS += -Ivendor/cmatrix
 .PHONY: all
 all: main
 
-main: main.cpp de.cpp matrix.cpp truss.cpp
-	${CXX} -o $@ $< ${SOURCE_INCLUDE_PATHS} ${CXXFLAGS} ${LDFLAGS}
+truss.o:
+	@cd vendor/truss && make
+	cp vendor/truss/build/truss.o .
+
+main: main.cpp de.cpp truss.o
+	${CXX} -o $@ $< truss.o ${SOURCE_INCLUDE_PATHS} ${CXXFLAGS} ${LDFLAGS}
 	# ${CXX} -o $@ $^ ${SOURCE_INCLUDE_PATHS} ${CXXFLAGS} ${LDFLAGS}
 
 .PHONE: clean

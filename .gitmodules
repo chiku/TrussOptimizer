@@ -1,3 +1,3 @@
-[submodule "vendor/cmatrix"]
-	path = vendor/cmatrix
-	url = https://github.com/chiku/cmatrix.git
+[submodule "vendor/truss"]
+	path = vendor/truss
+	url = https://github.com/chiku/TrussSolver.git
