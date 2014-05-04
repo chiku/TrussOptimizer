@@ -3,7 +3,7 @@
 ```shell
 git clone https://github.com/chiku/TrussSolver.git
 cd TrussSolver
-git submodule update --init
+git submodule update --init --recursive
 ```
 
 ## Compile
