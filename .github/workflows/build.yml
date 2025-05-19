@@ -38,4 +38,4 @@ jobs:
         run: make all
 
       - name: Optimize
-        run: ./make
+        run: ./main
