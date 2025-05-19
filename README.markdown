@@ -50,7 +50,7 @@ On executing main, these two files are searched for
 <lower limit for CR> <upper limit for CR>
 ```
 
-[A sample **de.dat** is available here](https://raw.github.com/chiku/TrussOptimizer/master/de.dat).
+[A sample **de.dat** is available here](https://raw.github.com/chiku/TrussOptimizer/main/de.dat).
 
 ### Format for truss.dat
 
@@ -66,7 +66,7 @@ On executing main, these two files are searched for
 <Young's modulus>
 ```
 
-[A sample **truss.dat** is available here](https://raw.github.com/chiku/TrussOptimizer/master/truss.dat).
+[A sample **truss.dat** is available here](https://raw.github.com/chiku/TrussOptimizer/main/truss.dat).
 
 ## Notes
 
