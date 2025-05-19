@@ -1,5 +1,6 @@
-#include "de.cpp"
 #include <ctime>
+
+#include "de.h"
 
 int main()
 {

@@ -6,9 +6,7 @@
 #include <cstdlib>
 
 #include "vendor/truss/include/truss.h"
-
-#ifndef __DE_H__
-#define __DE_H__
+#include "de.h"
 
 using namespace std;
 
@@ -22,53 +20,6 @@ inline double randomBetween(double a, double b) // [a, b)
 	return ( rand() * (b-a) /(0.0+RAND_MAX) + a);
 }
 
-
-
-class DE
-{
-	private:
-		Truss *T;
-		double *fitness;
-		bool *change; // update the fitness of only if change equals true
-		double avg_fitness, best_fitness;
-		int best_fitness_loc;
-		int total_evals; // total truss evaluations required in the whole process
-
-		double MIN_AREA, MAX_AREA;  // geometric constraints
-		double MAX_STRESS, MAX_DISP; // behaviour constraints
-		int POPULATION;  // DE parameter
-		double F_MIN, F_MAX, CR_MIN, CR_MAX;	 // DE parameters
-		double PENALTY;  // constant penalty
-
-	protected:
-		void findFitness();
-		void findFitnessLast();
-
-	public:
-		DE();
-		~DE();
-		void getData();
-		void evolution();
-		void printResult()
-		{
-			int i;
-			cout <<"\n\nThe stress in members are\n";
-			for (i=0; i<T[0].members(); i++)
-			{
-				double t =  T[best_fitness_loc].locforce[i](0, 0) * T[best_fitness_loc].locforce[i](0, 0) +
-							T[best_fitness_loc].locforce[i](1, 0) * T[best_fitness_loc].locforce[i](1, 0);
-				cout <<"\t" <<i <<">  " <<sqrt(t)/T[best_fitness_loc].area[i] <<endl;
-			}
-			cout <<"\n\nThe nodal displacements are\n";
-			for (i=0; i<T[0].uglobal.rows(); i++)
-				cout <<"\t" <<i <<"> " <<T[best_fitness_loc].uglobal(i, 0) <<endl;
-			cout <<"\n\nThe member area are\n";
-			for (i=0; i<T[0].members(); i++)
-				cout <<"Member no "<< i <<" " <<T[best_fitness_loc].area[i] <<endl;
-
-			cout <<"\n\nTotal truss evaluations performed: " <<total_evals <<endl;
-		}
-};
 
 // Constructor
 DE::DE()
@@ -240,15 +191,23 @@ void DE::evolution()
 	}
 }
 
-#endif
 
-/*
-int main()
+void DE::printResult()
 {
-	cout.precision(5);
-	for (int i=0; i<10000; i++)
-		cout <<randomBetween(1, 10) <<endl;
+	int i;
+	cout <<"\n\nThe stress in members are\n";
+	for (i=0; i<T[0].members(); i++)
+	{
+		double t =  T[best_fitness_loc].locforce[i](0, 0) * T[best_fitness_loc].locforce[i](0, 0) +
+					T[best_fitness_loc].locforce[i](1, 0) * T[best_fitness_loc].locforce[i](1, 0);
+		cout <<"\t" <<i <<">  " <<sqrt(t)/T[best_fitness_loc].area[i] <<endl;
+	}
+	cout <<"\n\nThe nodal displacements are\n";
+	for (i=0; i<T[0].uglobal.rows(); i++)
+		cout <<"\t" <<i <<"> " <<T[best_fitness_loc].uglobal(i, 0) <<endl;
+	cout <<"\n\nThe member area are\n";
+	for (i=0; i<T[0].members(); i++)
+		cout <<"Member no "<< i <<" " <<T[best_fitness_loc].area[i] <<endl;
+
+	cout <<"\n\nTotal truss evaluations performed: " <<total_evals <<endl;
 }
-*/
-
-
