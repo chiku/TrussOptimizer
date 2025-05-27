@@ -1,5 +1,7 @@
 // Optimization of truss using DE
 
+#include <string>
+
 #include "vendor/truss/include/truss.h"
 
 #ifndef __DE_H__
@@ -28,11 +30,11 @@ class DE
     protected:
         void findFitness();
         void findFitnessLast();
+        void getData(const std::string de_file);
 
     public:
-        DE();
+        DE(const std::string de_file);
         ~DE();
-        void getData();
         void evolution();
         void printResult();
 };

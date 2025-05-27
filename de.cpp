@@ -8,8 +8,6 @@
 #include "vendor/truss/include/truss.h"
 #include "de.h"
 
-using namespace std;
-
 inline int randomBetween(int a, int b) // [a, b)
 {
 	return ( a + rand() % (b+1-a) );
@@ -22,9 +20,9 @@ inline double randomBetween(double a, double b) // [a, b)
 
 
 // Constructor
-DE::DE()
+DE::DE(const std::string de_file)
 {
-	getData();
+	getData(de_file);
 
 	T = new Truss[POPULATION+1];
 	fitness = new double[POPULATION+1];
@@ -50,14 +48,14 @@ DE::~DE()
 
 
 // Get the DE parameters
-void DE::getData()
+void DE::getData(const std::string de_file)
 {
-	ifstream File("data/de.dat");
-	File >>MIN_AREA >>MAX_AREA;
-	File >>MAX_STRESS >>MAX_DISP;
-	File >>PENALTY;
-	File >>POPULATION >>F_MIN >>F_MAX >>CR_MIN >>CR_MAX;
-	File.close();
+	std::ifstream file(de_file);
+	file >> MIN_AREA >> MAX_AREA;
+	file >> MAX_STRESS >> MAX_DISP;
+	file >> PENALTY;
+	file >> POPULATION >> F_MIN >> F_MAX >> CR_MIN >> CR_MAX;
+	file.close();
 }
 
 // Find the fitnesses inclusive of penalty
@@ -153,8 +151,8 @@ void DE::evolution()
 		findFitness();
 		GENERATION++;
 
-		cout <<"Generation: " <<GENERATION <<"\tBest fit.: " <<best_fitness
-			<<"\tAvg. fit.: " <<avg_fitness <<endl;
+		std::cout << "Generation: " << GENERATION << "\tBest fit.: " << best_fitness
+			<< "\tAvg. fit.: " << avg_fitness << "\n";
 		int r2 = randomBetween(0, POPULATION);
 		int r3 = randomBetween(0, POPULATION);
 		int r4 = randomBetween(0, POPULATION);
@@ -195,19 +193,21 @@ void DE::evolution()
 void DE::printResult()
 {
 	int i;
-	cout <<"\n\nThe stress in members are\n";
+	std::cout << "\n\nThe stress in members are\n";
 	for (i=0; i<T[0].members(); i++)
 	{
 		double t =  T[best_fitness_loc].locforce[i](0, 0) * T[best_fitness_loc].locforce[i](0, 0) +
 					T[best_fitness_loc].locforce[i](1, 0) * T[best_fitness_loc].locforce[i](1, 0);
-		cout <<"\t" <<i <<">  " <<sqrt(t)/T[best_fitness_loc].area[i] <<endl;
+		std::cout << "\t" << i << ">  " << sqrt(t)/T[best_fitness_loc].area[i] << "\n";
 	}
-	cout <<"\n\nThe nodal displacements are\n";
-	for (i=0; i<T[0].uglobal.rows(); i++)
-		cout <<"\t" <<i <<"> " <<T[best_fitness_loc].uglobal(i, 0) <<endl;
-	cout <<"\n\nThe member area are\n";
-	for (i=0; i<T[0].members(); i++)
-		cout <<"Member no "<< i <<" " <<T[best_fitness_loc].area[i] <<endl;
+	std::cout <<"\n\nThe nodal displacements are\n";
+	for (i=0; i<T[0].uglobal.rows(); i++) {
+		std::cout << "\t" << i << "> " << T[best_fitness_loc].uglobal(i, 0) << "\n";
+	}
+	std::cout <<"\n\nThe member area are\n";
+	for (i=0; i<T[0].members(); i++) {
+		std::cout << "Member no " << i << " " << T[best_fitness_loc].area[i] << "\n";
+	}
 
-	cout <<"\n\nTotal truss evaluations performed: " <<total_evals <<endl;
+	std::cout << "\n\nTotal truss evaluations performed: " << total_evals << "\n";
 }
