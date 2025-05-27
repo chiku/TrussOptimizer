@@ -20,8 +20,9 @@ inline double randomBetween(double a, double b) // [a, b)
 
 
 // Constructor
-DE::DE(const std::string de_file)
+DE::DE(const std::string de_file, const std::string truss_file)
 {
+	this->truss_file = truss_file;
 	getData(de_file);
 
 	T = new Truss[POPULATION+1];
@@ -29,7 +30,7 @@ DE::DE(const std::string de_file)
 	change = new bool[POPULATION+1];
 	for (int i=0; i<POPULATION+1; i++)
 	{
-		T[i].getData();
+		T[i].getData(truss_file.c_str());
 		// Random initilization of area
 		for (int j=0; j<T[i].members(); j++)
 			T[i].area[j] = randomBetween(MIN_AREA, MAX_AREA);
@@ -143,7 +144,7 @@ void DE::evolution()
 	int j;
 
 	Truss temp;
-	temp.getData();
+	temp.getData(this->truss_file.c_str());
 	long int GENERATION = 0;
 	avg_fitness = 1e50; best_fitness = 1e49;
 	while (avg_fitness - best_fitness >= 0.000001 && GENERATION < 50000)

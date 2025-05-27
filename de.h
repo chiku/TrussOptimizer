@@ -14,6 +14,7 @@ double randomBetween(double a, double b); // [a, b)
 class DE
 {
     private:
+        std::string truss_file;
         Truss *T;
         double *fitness;
         bool *change;    // update the fitness of only if change equals true
@@ -33,7 +34,7 @@ class DE
         void getData(const std::string de_file);
 
     public:
-        DE(const std::string de_file);
+        DE(const std::string de_file, const std::string truss_file);
         ~DE();
         void evolution();
         void printResult();
