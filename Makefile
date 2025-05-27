@@ -10,8 +10,8 @@ SOURCE_INCLUDE_PATHS += -Ivendor/cmatrix
 all: main
 
 truss.o:
-	@cd vendor/truss && make build/truss.o
-	@cp -pv vendor/truss/build/truss.o .
+	@cd vendor/truss && make build/src/truss.o
+	@cp -pv vendor/truss/build/src/truss.o .
 
 main.o: main.cpp de.h
 	${CXX} -c ${CXXFLAGS} ${SOURCE_INCLUDE_PATHS} -o $@ $<
@@ -24,4 +24,4 @@ main: main.o de.o truss.o
 
 .PHONY: clean
 clean:
-	rm -rf main *.o
+	rm -rf main *.o vendor/truss/build/src/truss.o
