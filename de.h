@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "vendor/truss/include/truss.h"
+#include "truss.h"
 
 #ifndef __DE_H__
 #define __DE_H__

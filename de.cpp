@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "vendor/truss/include/truss.h"
+#include "truss.h"
 #include "de.h"
 
 inline int randomBetween(int a, int b) // [a, b)
@@ -30,7 +30,7 @@ DE::DE(const std::string de_file, const std::string truss_file)
 	change = new bool[POPULATION+1];
 	for (int i=0; i<POPULATION+1; i++)
 	{
-		T[i].getData(truss_file.c_str());
+		T[i].getData(read_truss_file(truss_file));
 		T[i].findKLocal();
 		// Random initilization of area
 		for (int j=0; j<T[i].members(); j++)
@@ -145,7 +145,7 @@ void DE::evolution()
 	int j;
 
 	Truss temp;
-	temp.getData(this->truss_file.c_str());
+	temp.getData(read_truss_file(this->truss_file));
 	temp.findKLocal();
 	long int GENERATION = 0;
 	avg_fitness = 1e50; best_fitness = 1e49;
