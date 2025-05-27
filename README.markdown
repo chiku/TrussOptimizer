@@ -29,7 +29,8 @@ The following files are needed for *truss optimizations*
 |----|-------|
 |matrix.cpp|Implements matrix manipulations|
 |truss.cpp|Truss solver|
-|de.cpp|Differential Evolution|
+|de.h|Differential Evolution header file|
+|de.cpp|Differential Evolution algorithm|
 |main.cpp|The main program|
 |main|The main executable|
 
@@ -38,7 +39,7 @@ On executing main, these two files are searched for
 |Name|Purpose|
 |----|-------|
 |de.dat|Stores some DE parameters|
-|truss.dat|Stores the truss structure|
+|truss1.dat|Stores the truss structure|
 
 
 ### Format for de.dat
