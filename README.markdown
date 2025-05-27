@@ -1,3 +1,5 @@
+[![build](https://github.com/chiku/TrussOptimizer/actions/workflows/build.yml/badge.svg)](https://github.com/chiku/TrussOptimizer)
+
 ## Fetch source code
 
 ```shell
